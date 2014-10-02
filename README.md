@@ -7,7 +7,7 @@ Publish your Igor Pro graphs to online Plotly graphs with 1-click!
 
 # Installation Instructions
 
-1. Install the easyHTTP XOP as an Igor extension (downloaded from Igor exchange)
+1. Install the [easyHTTP XOP](http://www.igorexchange.com/project/easyHttp) as an Igor extension (downloaded from Igor exchange)
   
   Follow the instrucions for MAC/PC in the easyHTTP install.txt file. Bascially, the 
 easyHTTP.xop file, or a shortcut to it, needs to end up Igor’s extension folder 
