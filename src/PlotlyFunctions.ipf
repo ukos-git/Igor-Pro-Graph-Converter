@@ -5,6 +5,8 @@
 #include <Graph Utility Procs>
 #include <Percentile and Box Plot>
 
+#include "PlotlyPrefs"
+
 // Requires Igor 6.1 or later for /FREE waves
 
 // Returns 1 if the colortable ctab is in this list, meaning that it is
@@ -2557,7 +2559,7 @@ End
 static Function/T CreateColorScaleObj(Name, graph, trace)
 	string Name, Graph, trace
 	string info = annotationinfo(graph, name, 1)
-	IgorNB(info + "\r\r")
+	IgorNB(info + "\r\r") /// @todo drop this call?
 	string Type = StringByKey("TYPE", info, ":", ";", 1)
 	string obj = ""
 	string Flags = StringByKey("FLAGS", info, ":", ";", 1)
@@ -2729,16 +2731,64 @@ static Function/T CreateColorScaleObj(Name, graph, trace)
 	return obj
 End
 
-Function PlotlySetUser([user, key])
-	string user, key
+/// @brief setup the connection to plot.ly
+Function PlotlySetUser(username, api_key)
+	string username, api_key
 
-	NewDataFolder/O root:Packages
-	NewDataFolder/O root:Packages:Plotly
-	if(!ParamIsDefault(user))
-		string/G root:Packages:Plotly:userName = user
+	STRUCT PlotlyPrefs prefs
+	PlotlyLoadPackagePrefs(prefs)
+
+	prefs.username = username
+	prefs.api_key = api_key
+
+	if(PlotlyTestConnection())
+		Abort "Supplied username and api_key is invalid"
 	endif
-	if(!ParamIsDefault(key))
-		string/G root:Packages:Plotly:userKey = key
+
+	PlotlySavePackagePrefs(prefs)
+End
+
+/// @brief test the connection to plot.ly
+/// @returns 0 on success and 1 otherwise
+Function PlotlyTestConnection()
+
+	string JSONlayout = "{\"showlegend\":false}"
+	string JSONdata = "[{\"y\":[20,14,23],\"type\":\"bar\"}]"
+
+	return PlotlySendGraph("test", JSONlayout, JSONdata)
+End
+
+/// @brief old API call to deprecated https://plot.ly/clientresp
+///
+/// Note: Function uses large strings!
+///       prints verbose to stdout to give url
+///
+/// @returns 0 on success and 1 otherwise
+Function PlotlySendGraph(name, JSONlayout, JSONdata, [JSONkwargs])
+	string name, JSONlayout, JSONdata, JSONkwargs
+
+	string args, kwargs, postData
+	STRUCT PlotlyPrefs prefs
+	PlotlyLoadPackagePrefs(prefs)
+
+	if(ParamIsDefault(JSONkwargs))
+		JSONkwargs ="{\"filename\":\"" + name + "\",\"fileopt\":\"overwrite\",\"layout\":" + JSONlayout + "}"
+	endif
+
+	kwargs = "kwargs=" + JSONkwargs + "&"
+	args = "args=" + JSONdata + "&"
+
+	sprintf postData, "un=%s&key=%s&platform=IgorPro&origin=plot&", prefs.username, prefs.api_key
+	postData += args + kwargs // do not use sprintf for large strings
+
+	UrlRequest/AUTH={prefs.username, prefs.api_key}/DSTR=(postData) url="https://plot.ly/clientresp", method=post
+	print S_serverResponse
+
+	if(V_flag)
+		return 1
+	endif
+	if(GrepString(S_serverResponse, "\"error\":\s*\"\","))
+		return 0
 	endif
 End
 
@@ -2749,29 +2799,30 @@ End
 /// @brief Main entry point
 ///
 /// @param graph         [optional] default: Use the top graph
-/// @param plotlyGraph   [optional] default: value of graph
-/// @param PlotlyFolder  [optional] default: Use the name of the experiment.
-/// @param skipSend      [optional] defaull: 1 (Do not send the graph to plot.ly)
-/// @param KeepCMD       [optional] default: 1 (Keep the CMD output notebook)
-Function Graph2Plotly([graph, plotlyGraph, plotlyFolder, skipSend, keepCMD])
-	string graph, PlotlyGraph, PlotlyFolder
-	variable skipSend
-	variable KeepCMD
+/// @param output        [optional] default: Use the name of the experiment.
+/// @param skipSend      [optional] default: 1 (Do not send the graph to plot.ly)
+/// @param keepCMD       [optional] default: 0 (Do not keep the CMD output notebook)
+/// @param writeFile     [optional] default: 1 (Write output to a json file in home)
+Function Graph2Plotly([graph, output, skipSend, keepCMD, writeFile])
+	string graph, output
+	variable skipSend, keepCMD, writeFile
 
-	if(ParamIsDefault(PlotlyFolder) )
-		PlotlyFolder = IgorInfo(1)
+	string plyName
+
+	if(ParamIsDefault(output))
+		output = IgorInfo(1)
 	endif
-	if(ParamIsDefault(skipSend))
-		skipsend=1
-	endif
-	if(ParamIsDefault(KeepCMD))
-		KeepCMD = 1
+	if(ParamIsDefault(keepCMD))
+		keepCMD = 0
 	endif
 	if(ParamIsDefault(graph))
 		graph = WinName(0, 1)
 	endif
-	if(ParamIsDefault(PlotlyGraph))
-		PlotlyGraph = graph
+	if(ParamIsDefault(writeFile))
+		writeFile = 0
+	endif
+	if(ParamIsDefault(skipSend))
+		skipSend = 0
 	endif
 
 	DoWindow $graph
@@ -2817,16 +2868,6 @@ Function Graph2Plotly([graph, plotlyGraph, plotlyFolder, skipSend, keepCMD])
 	NVAR barGap = root:Packages:Plotly:barGap
 	SVAR barToMode = root:packages:Plotly:BarToMode
 	NVAR TraceOrderFlag = root:packages:Plotly:TraceOrderFlag
-
-	if(!skipsend)
-		SVAR/Z user = root:packages:Plotly:UserName
-		SVAR/Z key = root:packages:Plotly:UserKey
-		if(!SVAR_Exists(user) || !SVAR_Exists(key))
-			print "Please use PlotlySetUser(user=\"UserName\", key=\"xxxxxxxxxx\") to set User and/or Key"
-			print "Run again using Graph2Plotly(skipsend = 1)"
-			return -1
-		endif
-	endif
 
 	string list
 
@@ -2877,35 +2918,11 @@ Function Graph2Plotly([graph, plotlyGraph, plotlyFolder, skipSend, keepCMD])
 		defaultMarkerSize = 15
 	endif
 
-	string plyName = graph + "_CMD"
+	// Create the data object
+	plyName = graph + "_data"
+	InitNotebook(plyName)
+	oPlystring(plyName, "[\r")
 
-	// Create the notebook and add header info
-	DoWindow $plyName
-	if(V_flag)
-		DoWindow/K $plyName
-	endif
-	NewNoteBook/N=$plyName/F=0
-
-	string Plyun = ""
-	string Plykey = ""
-	if(!skipsend)
-		if(StringMatch(user, ""))
-			print "Please use PlotlySetUser([user=\"UserName\", key=\"xxxxxxxxxx\"]) to set User and/or Key"
-			return -1
-		endif
-		if(StringMatch(key, ""))
-			print "Please use PlotlySetUser([user=\"UserName\", key=\"xxxxxxxxxx\"]) to set User and/or Key"
-			return -1
-		endif
-		Plyun = "un=" + user + "&\r"
-		Plykey = "key=" + key + "&\r"
-	endif
-	string platform = "platform=Igor&\r"
-	Notebook $plyName text=(Plyun + Plykey + platform)
-	oPlystring(plyName, "origin=plot&\r") // assume it is a graph
-
-	// DATA
-	oPlystring(plyName, "args=[\r")
 	variable index = 0
 	string traceName
 	string obj = ""
@@ -2979,15 +2996,12 @@ Function Graph2Plotly([graph, plotlyGraph, plotlyFolder, skipSend, keepCMD])
 		oPlystring(plyName, obj)
 	endif
 
-	oPlystring(plyName, "\r]&\r")
+	oPlystring(plyName, "\r]")
 
-	// LAYOUT
-	if(StringMatch(PlotlyFolder, "") )
-		obj = "kwargs={\r\"filename\":\"" + PlotlyGraph + "\",\r\"fileopt\":\"overwrite\",\r"
-	else
-		obj = "kwargs={\r\"filename\":\"" + PlotlyFolder + "/" + PlotlyGraph + "\",\r\"fileopt\":\"overwrite\",\r"
-	endif
-	obj += "\"layout\" : {\r"
+	// Create the layout object
+	plyName = graph + "_layout"
+	InitNotebook(plyName)
+	obj = "{\r"
 
 	// Set up the graph margins
 	GetWindow $graph, psizeDC
@@ -3160,19 +3174,36 @@ Function Graph2Plotly([graph, plotlyGraph, plotlyFolder, skipSend, keepCMD])
 	obj += "},\r"
 
 	obj = obj[0, strlen(obj) - 3]
-	obj += "\r},\r" // End of Layout
-	obj = obj[0, strlen(obj) - 3]
-	obj += "\r}" // End of KWARGS
+	obj += "\r}"
 	oPlystring(plyName, obj)
+	// End of Layout
 
-	if(!skipsend) // Send the data to Plotly unless asked not to
+	if(writeFile)
+		plyName = graph + "_data"
 		Notebook $plyName getData=2
-		string S_Post = Strip (S_Value)
-		easyHTTP /Post=S_Post "http://plot.ly/clientresp"
-		print S_GetHTTP
+		WriteOutput("{\"data\":" + S_Value + ",", output)
+
+		plyName = graph + "_layout"
+		Notebook $plyName getData=2
+		WriteOutput("\"layout\":" + S_Value + "}", output, appendTo = 1)
+	endif
+
+	if(!skipSend)
+		plyName = graph + "_data"
+		Notebook $plyName getData=2
+		String JSONdata = S_Value
+
+		plyName = graph + "_layout"
+		Notebook $plyName getData=2
+		if(PlotlySendGraph(output, S_Value, JSONdata))
+			Abort "could not send graph"
+		endif
 	endif
 
 	if(!keepCMD)
+		plyName = graph + "_data"
+		DoWindow/K $plyName
+		plyName = graph + "_layout"
 		DoWindow/K $plyName
 	endif
 
@@ -3191,18 +3222,14 @@ static Function IgorNB(str, [IgrName])
 	Notebook $IgrName, text=str
 End
 
-// Make a new notebook to get ready for Ploty-formated commands, and add the
-// default commands
-static Function NewPlyNB(plyName)
+static Function InitNotebook(plyName)
 	string plyName
 
 	DoWindow $plyName
 	if(V_flag)
 		DoWindow/K $plyName
 	endif
-
 	NewNoteBook/N=$plyName/F=0
-	oDefaultPlyInfo(plyName)
 End
 
 static Function oPlystring(plyName, str)
@@ -3215,48 +3242,12 @@ static Function oPlystring(plyName, str)
 	Notebook $plyName text=str
 End
 
-static Function oDefaultPlyInfo(plyName)
-	string plyName
-
-	string un = "un=fillinuser&\r" // @todo fill with data
-	string key = "key=fillinkey&\r"
-	string platform = "platform=Igor&\r"
-
-	Notebook $plyName text=(un + key + platform)
-End
-
 // Remove carriage returns from string
 static Function/s Strip(str)
 	string str
 
 	/// @todo figure out how to "grep" or othwise remove spaces preceeding the CR
 	return ReplaceString("\r", str, "")
-End
-
-function/s CMD2Plotly(nb)
-	string nb
-
-	string post
-
-	Notebook $nb getData=2
-	post = Strip(S_Value)
-	easyHTTP/Post=post "http://plot.ly/clientresp"
-
-	print S_GetHTTP // @todo remove debug output
-	return S_GetHTTP
-End
-
-static Function/S pplot([origin, filename, fileopt])
-	string origin
-	string filename
-	string fileopt
-
-	string un = "fillinuser" // @todo fill with data
-	string key = "fillinkey"
-	string platform = "Igor"
-	string kwArgs = "\""
-
-	return un + "&" + key + "&" + origin + "&" + platform + "&"
 End
 
 static Function ExtractRGB(rgbR, rgbG, rgbB, key, graph)
@@ -3277,3 +3268,26 @@ static Function ExtractRGB(rgbR, rgbG, rgbB, key, graph)
 	endif
 End
 
+
+/// Writes string str to filename
+Function WriteOutput(str, filename, [appendTo])
+	string str, filename
+	variable appendTo
+
+	variable refNum
+
+	appendTo = ParamIsDefault(appendTo) ? 0 : !!appendTo
+
+	if(appendTo)
+		Open/A/Z/P=home refNum as filename
+	else
+		Open/Z/P=home refNum as filename
+	endif
+	if(!V_flag)
+		FBinWrite refNum, str
+		Close refNum
+	else
+		PathInfo home
+		printf "Error: Could not write to output file at %s\r", S_path + filename
+	endif
+End

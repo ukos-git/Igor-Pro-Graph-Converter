@@ -7,94 +7,82 @@ Publish your Igor Pro graphs to online Plotly graphs with 1-click!
 
 # Installation Instructions
 
-1. Install the [easyHTTP XOP](http://www.igorexchange.com/project/easyHttp) as an Igor extension (downloaded from Igor exchange)
-  
-  Follow the instrucions for MAC/PC in the easyHTTP install.txt file. Bascially, the 
-easyHTTP.xop file, or a shortcut to it, needs to end up Igor’s extension folder 
-(WaveMetrics\Igor Pro Folder\Igor Extensions). The extension will then load 
-automatically every time Igor starts
+Igor Pro > 7 is required.
 
-2. Install the PlotlyFunctions.ipf Igor procedure file
-  - It is possible just to load this with File->Open File->Procedure for each new 
-experiment
-  - It is easier to place the PlotlyFunctions.ipr or a shortcut to PlotlyFunctions.ipf in 
-the directory `\Documents\WaveMetrics\Igor Pro 6 User Files\Igor Procedures` or 
-`Program Files (x86)\WaveMetrics\Igor Pro Folder\User Procedures`. This makes the 
-procedure file load every time Igor starts.
-
-3. Tell Igor who is using plotly
-  - From the command line, run the function PlotlySetUser with the parameters set 
-correctly:
-`plotlySetUser(user="your_plotly_username",key="your_api_key")`
-  - I recommend writing a function similar to my `plotlyUser` function and adding the 
-function to the Plotly procedure or some other procedure that always loads when 
-Igor starts. Then, to set the user, it is only necessary to run the function:
-
-    ```
-    Function jbmUser()
-        string user, key
-        NewDataFolder/O root:Packages
-        NewDataFolder/O root:Packages:Plotly // This line just makes sure this data folder exists.
-        string/G root:Packages:Plotly:userName = "your_plotly_username"
-        string/G root:Packages:Plotly:userKey = "your_plotly_apikey"
-    end
-    ```
+- Copy or link the files under `src/` to the Igor Pro User Procedure folder.
+- Dynamically load Plotly if you need it by adding `#include "Plotly"` to your Experiment.
+- Add your Plotly api_key: PlotlySetUser("username", "api_key")
+- Export the topmost graph to plot.ly: `Graph2Plotly()`
 
 # Usage
 
 Create some data and a simple graph
 
-```
-make/N=10 testData={4,2,4,6,4,1,6,1,3,0}
-display testData
+```igorpro
+Make/N=10 testData={4,2,4,6,4,1,6,1,3,0}
+Display testData
 ```
 
-Now send the data to plotly by either pressing ctrl-1, or executing the 
+# Advanced Usage
+
+## send to plotly
+
+Now send the data to plotly by executing the 
 command:
 
-```
-Graph2plotly()
-```
-
-Which a JSON string with a URL of an online version of your graph:
-
-`{"url": "http://plot.ly/~jbmiller/119", "message": "", 
-"warning": "", "filename": "Demo Experiment #1Demo Experiment #1/Graph0",
-"error": ""}`
-
-
-# Advanced Usage for Developers
-
-You can view the converted JSON with the following command: 
-
-```
-Graph2plotly(keepCMD=1)
+```igorpro
+Graph2Plotly()
 ```
 
-This displays a text file with Plotly's JSON format, which you can edit by hand.
+## export
 
-If you want to send the text file, just use the “command” to plotly command, 
-but you have to supply the name of the text window, e.g
-`CMD2Plotly("Graph0_CMD")`
-
-
-`Graph2Plotly` also takes an optional parameter for a graph window name, 
-so you don’t have to send the “top” graph (although I always send the top graph)
-
-```
-graph2plotly(graph=”graph0”)
+```igorpro
+Graph2Plotly(output = "plotly.json", writeFile = 1, skipSend = 1)
 ```
 
-You can also make a text window, but not send it to Plotly:
+This writes a JSON string with the name `plotly.json` to the path where 
+the Experiment is located (home).
+
+## optional parameters
+
+The following optional parameters are available:
+
+
+* `graph`         default: Use the top graph
+* `output`        default: Use the name of the experiment.
+* `skipSend`      default: 1 (Do not send the graph to plot.ly)
+* `keepCMD`       default: 0 (Do not keep the CMD output notebook)
+* `writeFile`     default: 1 (Write output to a json file in home)
+
+## offline plots
+
+There is a tiny python script in `bin/` that allows conversion to offline html using
+the plotly python library.
+
+## Trouble Shooting
+
+### Install
+
+If you can not find your User Procedures folder, go to Help->Show Igor Pro User Files to navigate
+quickly to this system-specific folder. Currently, on windows 10 with Igor Pro 8, this folder is named
+`%USERPROFILE%\Documents\WaveMetrics\Igor Pro 8 User Files\Igor Procedures`.
+
+### API Communication
+
+API communication is running on a deprecated API version. It may break eventually.
+
+After a successful call to the api, the url is returned. Please watch the output on stdout:
+
+```igorpro
+Graph2Plotly()
 ```
-graph2plotly(skipsend=1)
+```json
+  {"error": "", "warning": "", "message": "", "url": "https://plot.ly/~username/0", "filename": "Untitled"}
 ```
 
-You can also choose the name of the graph in Plotly. 
-If you don’t choose, the name is the same as the name in Igor. 
-Also, by default, the Plotly folder is the same as the experiment name, but can 
-also be specified:
+Report back on github if you see unusual errors like this:
 
-```
-graph2plotly(plotlyGraph=”MyName”,plotlyFolder=”MyFolder”)
+```json
+  {"error": "Hm... Plotly had some trouble decoding your 'args'. Are you sure your data or styling object is in the right format? Check out the examples at https://plot.ly/api for guidance.\n\nNeed help
+? Please try searching Plotly's <a href='http://stackoverflow.com/questions/tagged/plotly'>Stack Overflow channel</a>.", "warning": "", "message": "", "url": "", "filename": ""}
 ```
