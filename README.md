@@ -3,7 +3,9 @@ Igor Pro Graph Converter
 
 Publish your Igor Pro graphs to online Plotly graphs with 1-click!
 
-[![Contour subplots in Igor Pro](http://i.imgur.com/9QKmUQb.png)](https://plot.ly/~test-runner/10)
+[![Igor Pro Logo](https://plot.ly/~ukos-plotly/14.png)](https://plot.ly/~ukos-plotly/14)
+
+Click the above graph to fly to plot.ly and see the interactive version.
 
 # Installation Instructions
 
