@@ -769,9 +769,15 @@ static Function/T CreateColorTab(colorinfo, zwave[, cindex])
 		variable zMax = str2num(StringFromList(1, Colorinfo, ","))
 		string ctName = StringFromList(2, Colorinfo, ",")
 		variable ReverseMode = str2num(StringFromList(3, Colorinfo, ","))
-		ColorTab2Wave $ctName // Makes a Nx43 matrix for RGB name M_colors
-		wave M_colors=M_colors
-		variable discrete = DiscreteColorTable(ctName)
+		variable discrete
+		if(WhichListItem(ctName, Ctablist()) != -1)
+			ColorTab2Wave $ctName // Makes a Nx43 matrix for RGB name M_colors
+			WAVE M_colors = M_colors
+			discrete = DiscreteColorTable(ctName)
+		else
+			Duplicate/FREE $ctName M_colors /// @todo: user color tables not supported
+			discrete = 0
+		endif
 	else // color index
 		WaveStats/Q zwave
 		zMin = V_min
