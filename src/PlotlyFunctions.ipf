@@ -51,6 +51,8 @@ End
 
 // Returns the text cleaned of dangerous backslashes, and returns whatever data
 // Plotly can use
+//
+// @todo do these replacements with regexp patterns to support multiple closing conditions etc
 static Function/T ProcessText(text, fontName, fontSize, OZ, [OZval])
 	string text, &fontName
 	variable &fontSize, &OZ, OZval
@@ -102,7 +104,18 @@ static Function/T ProcessText(text, fontName, fontSize, OZ, [OZval])
 		text = ReplaceString(xtra, text, "")
 	while(index > -1)
 
-	text = ReplaceString("\B", text, "", 1)
+	do
+		index = strsearch(text, "\\B", 0)
+		if(index == -1)
+			break
+		endif
+		closeQuote = strsearch(Text, "\\", index + 2)
+		if(closeQuote == -1)
+			closeQuote = inf
+		endif
+		text = text[0, index - 1] + "<sub>" + text[index + 2, closeQuote - 1] + "</sub>" + text[closeQuote, inf]
+	while(index > -1)
+
 	text = ReplaceString("\JR", text, "", 1)
 	text = ReplaceString("\JC", text, "", 1)
 	text = ReplaceString("\JL", text, "", 1)
