@@ -885,8 +885,12 @@ static Function/T zColorArray(colorinfo, mode[, transp])
 	elseif(StringMatch(ctName, "directRGB"))
 		print "COLOR ERROR : directRBG"
 	else // color table
-		ColorTab2Wave $ctName // Makes a Nx43 matrix for RGB name M_colors
-		wave M_colors
+		if(WhichListItem(ctName, Ctablist()) != -1)
+			ColorTab2Wave $ctName // Makes a Nx43 matrix for RGB name M_colors
+			WAVE M_colors = M_colors
+		else
+			Duplicate/FREE $ciWave M_colors
+		endif
 		numColors = DimSize(zwave, 0)	// Make a color entry for each point
 		M_colors /= 257 // Plotly is 8-bit
 		WaveStats/Q $szWave
@@ -902,7 +906,6 @@ static Function/T zColorArray(colorinfo, mode[, transp])
 			zmx = V_max
 		endif
 
-		Duplicate/O M_colors m_test /// @todo delete debug statement
 		if(str2num(ReverseMode)==1)
 			SetScale/I x zmx, zmn, "" M_colors
 		else
@@ -1278,6 +1281,8 @@ static Function/T CreateTrObj(traceName, graph)
 	NVAR TraceOrderFlag = root:packages:Plotly:TraceOrderFlag
 	string XAxis = StringByKey("XAXIS", info, ":", ";", 1) // Get the name of the x-axis, but in Igor this does not have to be horizontal
 	string YAxis = StringByKey("YAXIS", info, ":", ";", 1) // Get the name of the y-axis, but in Igor this does not have to be vertical
+	string YRange = StringByKey("YRANGE", info, ":", ";", 1)
+	string XRange = StringByKey("XRANGE", info, ":", ";", 1)
 	string AxisFlags = StringByKey("AXISFLAGS", info, ":", ";", 1)
 	string Lnam = StringByKey("L", AxisFlags, "=", "/", 1)
 	string Tnam = StringByKey("T", AxisFlags, "=", "/", 1)
@@ -1321,16 +1326,33 @@ static Function/T CreateTrObj(traceName, graph)
 	endif
 	// Done sorting out the axes
 
+	// We do this duplication so that if we change the wave (ie, for cityscape or bar) it doesn't change locally
 	wave Tempyw = TraceNameToWaveRef(graph, traceName)
-	Duplicate/O/FREE Tempyw yw // We do this duplication so that if we change the wave (ie, for cityscape or bar) it doesn't change locally
+	if(!cmpstr(Yrange, ""))
+		Duplicate/FREE Tempyw yw
+	else
+		// @todo support slicing for all possible variations: x-references with () and multiple dimensions.
+		string expr="\[([[:digit:]\*]+)(?:,\s*([[:digit:]\*]+))?\](.*)"
+		string pRangeStart, pRangeStop
+		SplitString/E=(expr) Yrange, pRangeStart, pRangeStop, Yrange
+		string qRangeStart, qRangeStop
+		SplitString/E=(expr) Yrange, qRangeStart, qRangeStop, Yrange
+		if(!cmpstr(qRangeStart, "*"))
+			qRangeStop = qRangeStart
+			qRangeStart = "0"
+		endif
+		Duplicate/FREE/R=[str2num(pRangeStart)][str2num(qRangeStart), str2num(qRangeStop)] Tempyw yw
+		Redimension/E=1/N=(DimSize(yw, 1), 0) yw
+		SetScale/P x, DimOffset(Tempyw, 1), DimDelta(Tempyw, 1), yw
+	endif
 	variable trLen = DimSize(yw, 0)
 	if(!WaveExists(XWaveRefFromTrace(graph, traceName))) // Not plotted against x-wave, in other words, use igor Wave scaling.
-		Duplicate/O/FREE yw xw
+		Duplicate/FREE yw xw
 		xw = x
 		AutoX=1
 	else
-		 wave TempXw = XWaveRefFromTrace(graph, traceName)
-		Duplicate/O/FREE TempXw xw
+		WAVE TempXw = XWaveRefFromTrace(graph, traceName)
+		Duplicate/FREE TempXw xw
 	endif
 	if(!WaveType(xw)) // The x-wave is not numeric...this is a category plot
 		CategoryPlot = 1
