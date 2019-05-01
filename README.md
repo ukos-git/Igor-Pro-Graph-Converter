@@ -1,3 +1,9 @@
+Notes
+=====
+
+This is a fastly changing dev branch for https://github.com/plotly/Igor-Pro-Graph-Converter
+rebase can happen on master.
+
 Igor Pro Graph Converter
 ========================
 
