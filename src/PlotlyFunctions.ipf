@@ -2563,7 +2563,6 @@ End
 static Function/T CreateColorScaleObj(Name, graph, trace)
 	string Name, Graph, trace
 	string info = annotationinfo(graph, name, 1)
-	IgorNB(info + "\r\r") /// @todo drop this call?
 	string Type = StringByKey("TYPE", info, ":", ";", 1)
 	string obj = ""
 	string Flags = StringByKey("FLAGS", info, ":", ";", 1)
@@ -3212,18 +3211,6 @@ Function Graph2Plotly([graph, output, skipSend, keepCMD, writeFile])
 	endif
 
 	return 1
-End
-
-static Function IgorNB(str, [IgrName])
-	string str, IgrName
-	if(ParamIsDefault(IgrName))
-		IgrName = "IgrGraphNB"
-	endif
-	DoWindow $IgrName
-	if(V_flag==0)
-		NewNoteBook/N=$IgrName
-	endif
-	Notebook $IgrName, text=str
 End
 
 static Function InitNotebook(plyName)
