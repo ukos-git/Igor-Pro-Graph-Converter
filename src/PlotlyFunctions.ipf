@@ -1350,15 +1350,26 @@ static Function/T CreateTrObj(traceName, graph)
 		string expr="\[([[:digit:]\*]+)(?:,\s*([[:digit:]\*]+))?\](.*)"
 		string pRangeStart, pRangeStop
 		SplitString/E=(expr) Yrange, pRangeStart, pRangeStop, Yrange
+		if(!cmpstr(pRangeStart, "*") && !cmpstr(pRangeStop, ""))
+			pRangeStop = pRangeStart
+			pRangeStart = "0"
+		endif
+
 		string qRangeStart, qRangeStop
 		SplitString/E=(expr) Yrange, qRangeStart, qRangeStop, Yrange
-		if(!cmpstr(qRangeStart, "*"))
+		if(!cmpstr(qRangeStart, "*") && !cmpstr(pRangeStop, ""))
 			qRangeStop = qRangeStart
 			qRangeStart = "0"
 		endif
-		Duplicate/FREE/R=[str2num(pRangeStart)][str2num(qRangeStart), str2num(qRangeStop)] Tempyw yw
-		Redimension/E=1/N=(DimSize(yw, 1), 0) yw
-		SetScale/P x, DimOffset(Tempyw, 1), DimDelta(Tempyw, 1), yw
+
+		if(!cmpstr(qRangeStart, "") && !cmpstr(qRangeStop, ""))
+			Duplicate/FREE/R=[str2num(pRangeStart), str2num(pRangeStop)] Tempyw yw
+			Redimension/N=(-1, 0) yw
+		else
+			Duplicate/FREE/R=[str2num(pRangeStart)][str2num(qRangeStart), str2num(qRangeStop)] Tempyw yw
+			Redimension/E=1/N=(DimSize(yw, 1), 0) yw
+			SetScale/P x, DimOffset(Tempyw, 1), DimDelta(Tempyw, 1), yw
+		endif
 	endif
 	variable trLen = DimSize(yw, 0)
 	if(!WaveExists(XWaveRefFromTrace(graph, traceName))) // Not plotted against x-wave, in other words, use igor Wave scaling.
