@@ -322,31 +322,46 @@ End
 
 static Function/T WaveToJSONArray(wv)
 	wave wv
-	variable len = DimSize(wv, 0)
-	string out = "[\r"
-	variable i = 0
-	do
-		out += dub2str(wv[i]) + ",\r"
-		i += 1
-	while (i < len)
-	out = out[0, strlen(out) - 3]
-	out += "\r]"
+
+	string out
+	variable i, dim0
+
+	dim0 = DimSize(wv, 0)
+	if(dim0 == 0)
+		return "[]"
+	endif
+
+	out = "["
+	for(i = 0; i < dim0; i += 1)
+		out += dub2str(wv[i]) + ","
+	endfor
+	out = out[0, strlen(out) - 2]
+	out += "]"
+
 	return out
 End
 
 static Function/T txtWaveToJSONArray(wv)
 	wave/T wv
-	variable len = DimSize(wv, 0)
-	string out = "[\r"
+
+	variable i, dim0
+	string out
 	string fontName=""
-	variable FontSize=0
+	variable FontSize = 0
 	variable OZ = 0
-	variable i = 0
-	do
-		out += "\"" + ProcessText(wv[i], fontName, Fontsize, OZ) + "\",\r"
-		i += 1
-	while (i < len-1)
-	out += "\"" + ProcessText(wv[i], fontName, Fontsize, OZ) + "\"\r]"
+	
+	dim0 = DimSize(wv, 0)
+	if(dim0 == 0)
+		return "[]"
+	endif
+
+	out = "["
+	for(i = 0; i < dim0; i += 1)
+		out += "\"" + ProcessText(wv[i], fontName, Fontsize, OZ) + "\","
+	endfor
+	out = out[0, strlen(out) - 2]
+	out += "]"
+	
 	return out
 End
 
