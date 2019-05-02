@@ -2614,7 +2614,6 @@ static Function/T CreateLegendObj(Name, graph, IsLegend)
 	string altFont
 	variable altFontSize, OZ
 	LblTxt = ProcessText(LblTxt, altFont, altFontsize, OZ)
-	obj += "\"text\":\"" + LblTxt + "\",\r"
 	obj += "\"font\":{\r"
 	obj += "\"color\":\"rgb(" + dub2str(rgbR) + "," + dub2str(rgbG) + "," + dub2str(rgbB) + ")\",\r"
 	if(!StringMatch(altFont, "default"))
