@@ -490,7 +490,8 @@ static Function/T AssignMarkerName(MrkrNum, mFill)
 			PlyMrkr = "diamond"
 			break
 		case 8:
-			PlyMrkr = "dot"
+			PlyMrkr = "circle"
+			mFill = 0
 			break
 		case 9: // hline
 			PlyMrkr = "line-ew"
@@ -528,7 +529,7 @@ static Function/T AssignMarkerName(MrkrNum, mFill)
 			mFill = 1
 			break
 		case 19: // circle
-			PlyMrkr = "dot"
+			PlyMrkr = "circle"
 			mFill = 1
 			break
 		case 20: // slash
