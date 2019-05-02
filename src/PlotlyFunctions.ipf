@@ -3291,13 +3291,29 @@ static Function InitNotebook(plyName)
 	NewNoteBook/N=$plyName/F=0
 End
 
+static Constant SEARCH_BACKWARDS = 1
+static Constant NOTEBOOK_MAXBYTE = 6500
+
 static Function oPlystring(plyName, str)
 	string plyName, str
+
+	variable split
 
 	DoWindow $plyName
 	if(!V_Flag)
 		print "Please create this Ply Window first"
 	endif
+
+	if(strlen(str) < NOTEBOOK_MAXBYTE)
+		Notebook $plyName text=str
+		return NaN
+	endif
+
+	do
+		split = strsearch(str, ",", NOTEBOOK_MAXBYTE - 1, SEARCH_BACKWARDS)
+		Notebook $plyName text=(str[0, split] + "\r")
+		str = str[split + 1, inf]
+	while(strlen(str) > NOTEBOOK_MAXBYTE)
 	Notebook $plyName text=str
 End
 
