@@ -2049,6 +2049,7 @@ static Function/T createAxisObj(axisName, PlyAxisName, graph, Orient, AxisNum)
 					variable anchorDhi=1
 					ReadAchorDomain(graph, anchorAx, anchorDlo, anchorDhi) // Returns the domain of the anchor axis as pointers
 					FreeFrac = anchorDlo + (anchorDhi - anchorDlo) * (AnchorData - FreeLo) / (FreeHi - FreeLo)
+					FreeFrac = max(min(FreeFrac, 1), 0)
 					obj +="\"anchor\":\"free\",\r"
 					obj +="\"position\":" + dub2str(FreeFrac) + ",\r"
 				endif
@@ -2058,7 +2059,8 @@ static Function/T createAxisObj(axisName, PlyAxisName, graph, Orient, AxisNum)
 				cma = strsearch(info, ";", freeIndex + 11) // Actually a semicolon...
 				AnchorData = str2num(info[FreeIndex + 11, cma - 1]) // Read the position of the axis supposedly in points from the bottom axis
 				AnchorData = numtype(AnchorData) == 0 ? AnchorData : 0
-				FreeFrac = -(AnchorData/PxSize)
+				FreeFrac = -1 * (AnchorData / PxSize)
+				FreeFrac = max(min(FreeFrac, 1), 0)
 				obj +="\"anchor\":\"free\",\r"
 				if(RorT) // Have to go from the other margin if Right or Top
 					obj += "\"position\":" + dub2str(1 - FreeFrac) + ",\r"
@@ -2095,6 +2097,7 @@ static Function/T createAxisObj(axisName, PlyAxisName, graph, Orient, AxisNum)
 					FreeHi = V_max // + (LargestMarkerSize * 2.25) * FreeNumPerPx
 					ReadAchorDomain(graph, anchorAx, anchorDlo, anchorDhi) // Returns the domain of the anchor axis as pointers
 					FreeFrac = anchorDlo + (anchorDhi - anchorDlo) * (AnchorData - FreeLo) / (FreeHi - FreeLo)
+					FreeFrac = max(min(FreeFrac, 1), 0)
 					obj += "\"anchor\":\"free\",\r"
 					obj += "\"position\":" + dub2str(FreeFrac) + ",\r"
 				endif
@@ -2104,7 +2107,8 @@ static Function/T createAxisObj(axisName, PlyAxisName, graph, Orient, AxisNum)
 				cma = strsearch(info, ";", freeIndex, 11) // Actually a semicolon...
 				AnchorData = str2num(info[FreeIndex + 11, cma - 1]) // Read the position of the axis supposedly in points from the bottom axis
 				AnchorData = numtype(Anchordata) == 0 ? AnchorData : 0
-				FreeFrac = -(AnchorData/PxSize)
+				FreeFrac = -1 * (AnchorData / PxSize)
+				FreeFrac = max(min(FreeFrac, 1), 0)
 				obj += "\"anchor\":\"free\",\r"
 				if(RorT) // Have to go from the other margin if Right or Top
 					obj += "\"position\":" + dub2str(1 - FreeFrac) + ",\r"
