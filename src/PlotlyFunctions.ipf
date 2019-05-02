@@ -1746,6 +1746,7 @@ static Function/T CreateTrObj(traceName, graph)
 	obj += "\"mode\":\"" + plyMode + "\",\r"
 
 	// Set Error bar information
+	/// @todo how about parsing this with regex?
 	string EBinfo = StringByKey("ERRORBARS", info, ":", ";", 1)
 	if(strlen(EBinfo) > 0) // error bars
 		EBinfo = EBinfo[9, inf] // Strip out the word Errorbars
@@ -1769,9 +1770,9 @@ static Function/T CreateTrObj(traceName, graph)
 			string mw1 = EBinfo[Wcma + 1, pR - 1] // wave for minus error bar 1
 			PosEndX = pR + 1
 		else
-			variable eq = strsearch(EBinfo, "=", cma1)       // Find the =
-			variable cma2 = strsearch(EBinfo, ",", cma1, 1) // Find the ,
-			PosEndX=cma2
+			variable eq = strsearch(EBinfo, "=", cma1)
+			variable cma2 = strsearch(EBinfo, ",", cma1 + 1)
+			PosEndX = cma2
 			if(cma2 < 0)
 				cma2 = strlen(EBinfo) + 1
 			endif
