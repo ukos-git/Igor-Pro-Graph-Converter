@@ -939,7 +939,7 @@ static Function/T zColorArray(colorinfo, mode[, transp])
 			else
 				val = zWave[i]
 			endif
-			out += "\"rgba(" + dub2str(interp2d(M_colors, val, 0)) + "," + dub2str(interp2d(M_colors, val, 1)) + "," + dub2str(interp2d(M_colors, val, 2)) + " +" + dub2str(transp) + ")\",\r"
+			out += "\"rgba(" + dub2str(interp2d(M_colors, val, 0)) + "," + dub2str(interp2d(M_colors, val, 1)) + "," + dub2str(interp2d(M_colors, val, 2)) + "," + dub2str(transp) + ")\",\r"
 			i += 1
 		while(i < numColors)
 		out = out[0, strlen(out) - 3] // Remove the comma after the last data value
