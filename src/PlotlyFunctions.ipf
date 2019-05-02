@@ -1419,9 +1419,9 @@ static Function/T CreateTrObj(traceName, graph)
 		case 4:
 			txtMrk = GetNumFromModifyStr(info, "textMarker", "", 0)
 			if(!numtype(txtMrk)) // txtMrk is a number, meaning there are no text markers in the trace
-				plyMode = "lines, markers"
+				plyMode = "lines+markers"
 			else // We have a text graph
-				plyMode = "lines, text"
+				plyMode = "lines+text"
 			endif
 			break
 		case 5: // Bars. But we need to handle it differently if not category plot...instead use cityscape and fill to zero.
