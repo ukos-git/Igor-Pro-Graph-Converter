@@ -3314,7 +3314,11 @@ static Function oPlystring(plyName, str)
 	endif
 
 	do
-		split = strsearch(str, ",", NOTEBOOK_MAXBYTE - 1, SEARCH_BACKWARDS)
+		// avoid splitting at "rgb(0,0,0)"
+		split = strsearch(str, ",\"", NOTEBOOK_MAXBYTE - 1, SEARCH_BACKWARDS)
+		if(split == -1)
+			split = strsearch(str, ",", NOTEBOOK_MAXBYTE - 1, SEARCH_BACKWARDS)
+		endif
 		Notebook $plyName text=(str[0, split] + "\r")
 		str = str[split + 1, inf]
 	while(strlen(str) > NOTEBOOK_MAXBYTE)
