@@ -9,7 +9,7 @@ Click the above graph to fly to plot.ly and see the interactive version.
 
 # Installation Instructions
 
-Igor Pro > 7 is required.
+Igor Pro >= 7 is required.
 
 - Copy or link the files under `src/` to the Igor Pro User Procedure folder.
 - Dynamically load Plotly if you need it by adding `#include "Plotly"` to your Experiment.

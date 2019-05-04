@@ -9,8 +9,6 @@
 
 #include "PlotlyPrefs"
 
-// Requires Igor 6.1 or later for /FREE waves
-
 // Returns 1 if the colortable ctab is in this list, meaning that it is
 // discrete and should not be interpolated.  Users may add the wave name of
 // their own discrete color tables to the list to avoid Plotly doing
