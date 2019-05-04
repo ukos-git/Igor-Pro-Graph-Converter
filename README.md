@@ -29,7 +29,7 @@ Display testData
 
 ## send to plotly
 
-Now send the data to plotly by executing the 
+Now send the data to plotly by executing the
 command:
 
 ```igorpro
@@ -42,7 +42,7 @@ Graph2Plotly()
 Graph2Plotly(output = "plotly.json", writeFile = 1, skipSend = 1)
 ```
 
-This writes a JSON string with the name `plotly.json` to the path where 
+This writes a JSON string with the name `plotly.json` to the path where
 the Experiment is located (home).
 
 ## optional parameters
