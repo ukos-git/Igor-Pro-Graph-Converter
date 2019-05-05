@@ -1797,7 +1797,6 @@ static Function/T CreateTrObj(traceName, graph)
 			txtinfo = txtinfo[infopntr + 1, inf]
 			infopntr = strsearch(txtinfo, ",", 0)
 			string txtFont = txtinfo[0, infopntr - 1]
-			string txtrgbR, txtrgbG, txtrgbB
 
 			obj += "\"textfont\":{\r"
 			obj += "\"family\":" + txtFont + ",\r"
@@ -3408,25 +3407,6 @@ static Function/s Strip(str)
 	/// @todo figure out how to "grep" or othwise remove spaces preceeding the CR
 	return ReplaceString("\r", str, "")
 End
-
-static Function ExtractRGB(rgbR, rgbG, rgbB, key, graph)
-	variable &rgbR, &rgbG, &rgbB
-	string key
-	string graph
-
-	string info
-	variable index
-	string window_macro = WinRecreation(graph, 1)
-
-	index = strsearch(window_macro, key, 0)
-	if(index < -1) // @todo check this condition
-		print"Note, did not find the key"
-		return 0
-	else
-		print "return", index, strsearch(window_macro, "\r", index)
-	endif
-End
-
 
 /// Writes string str to filename
 Function WriteOutput(str, filename, [appendTo])
