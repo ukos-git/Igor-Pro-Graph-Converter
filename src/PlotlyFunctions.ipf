@@ -1033,7 +1033,7 @@ static Function/T CreateContourObj(contour, graph)
 	string Tnam = StringByKey("T", AxisFlags, "=", "/", 1)
 	string Rnam = StringByKey("R", AxisFlags, "=", "/", 1)
 	string Bnam = StringByKey("B", AxisFlags, "=", "/", 1)
-	variable rgbR, rgbG, rgbB
+	int rgbR, rgbG, rgbB
 	variable setlinecolor=0
 
 	// Look out for axis swap and add names of axes to a vertical and horizontal list
@@ -1584,9 +1584,10 @@ static Function/T CreateTrObj(traceName, graph)
 
 	// Get the main color information for this trace.
 	string RGB_Array=""		// We'll store data here if a color array is needed
-	variable rgbR = round(GetNumFromModifyStr(info, "rgb", "(", 0)/257)
-	variable rgbG = round(GetNumFromModifyStr(info, "rgb", "(", 1)/257)
-	variable rgbB = round(GetNumFromModifyStr(info, "rgb", "(", 2)/257)
+	int rgbR, rgbG, rgbB
+	rgbR = round(GetNumFromModifyStr(info, "rgb", "(", 0)/257)
+	rgbG = round(GetNumFromModifyStr(info, "rgb", "(", 1)/257)
+	rgbB = round(GetNumFromModifyStr(info, "rgb", "(", 2)/257)
 	string TraceRGB = "\"rgb(" + dub2str(rgbR) + "," + dub2str(rgbG) + "," + dub2str(rgbB) + ")\""
 	variable hbFill = GetNumFromModifyStr(info, "hbFill", "", 0)
 	variable FillA = 1
@@ -1667,7 +1668,7 @@ static Function/T CreateTrObj(traceName, graph)
 
 	// Fill information for Fill to Zero
 	if(mode == 7 || mode == 6)
-			variable PlusrgbR, plusrgbG, plusrgbB
+			int PlusrgbR, plusrgbG, plusrgbB
 			if(tomode == 1) // Fill to next, but in Plotly it's fill to last so reverst the ordering
 				TraceOrderFlag=1
 				obj += "\"fill\":\"tonexty\",\r"
@@ -1698,9 +1699,10 @@ static Function/T CreateTrObj(traceName, graph)
 		if(MrkrSize == 0)
 			MrkrSize = defaultMarkerSize
 		endif
-		variable MrkrrgbR = round(GetNumFromModifyStr(info, "mrkStrokeRGB", "(", 0)/257) // These are the marker stroke colors reported by Igor
-		variable mrkrrgbG = round(GetNumFromModifyStr(info, "mrkStrokeRGB", "(", 1)/257)
-		variable MrkrrgbB = round(GetNumFromModifyStr(info, "mrkStrokeRGB", "(", 2)/257)
+		int MrkrrgbR, MrkrrgbG, MrkrrgbB
+		MrkrrgbR = round(GetNumFromModifyStr(info, "mrkStrokeRGB", "(", 0)/257) // These are the marker stroke colors reported by Igor
+		mrkrrgbG = round(GetNumFromModifyStr(info, "mrkStrokeRGB", "(", 1)/257)
+		MrkrrgbB = round(GetNumFromModifyStr(info, "mrkStrokeRGB", "(", 2)/257)
 		string MarkerRGB = "\"rgb(" + dub2str(MrkrrgbR) + "," + dub2str(MrkrrgbG) + "," + dub2str(MrkrrgbB) + ")\""
 		variable UseMrkrStroke = GetNumFromModifyStr(info, "useMrkStrokeRGB", "", 0)
 		variable opaque = GetNumFromModifyStr(info, "opaque", "", 0)
@@ -2093,9 +2095,7 @@ static Function/T createAxisObj(axisName, PlyAxisName, graph, Orient, AxisNum)
 	NVAR barGap = root:Packages:Plotly:barGap
 	SVAR BarToMode = root:packages:Plotly:BarToMode
 	NVAR catCount = root:packages:Plotly:CatCount
-	variable rgbR
-	variable rgbG
-	variable rgbB
+	int rgbR, rgbG, rgbB
 
 	string XAxis = StringByKey("XAXIS", info, ":", ";", 1) // Get the name of the x-axis
 	string YAxis = StringByKey("YAXIS", info, ":", ";", 1) // Get the name of the y-axis
@@ -2737,6 +2737,7 @@ static Function/T CreateColorScaleObj(Name, graph, trace)
 	string anchorCode, backCode, dflag, TxtColor, Rotation, exterior, Xpos, Ypos
 	variable BarWidth, frame
 	variable absX, absY, fracx, fracy
+	int rgbR, rgbG, rgbB, rgbA
 
 	// Look up the size of the graph window, in points
 	GetWindow $graph, gsize
@@ -2751,7 +2752,6 @@ static Function/T CreateColorScaleObj(Name, graph, trace)
 	variable p_right = V_right
 	variable p_top = V_top
 	variable p_bottom = V_bottom
-	variable rgbR, rgbG, rgbB, rgbA
 
 	// Annotation is not a color scale
 	if(!StringMatch(type, "ColorScale"))
