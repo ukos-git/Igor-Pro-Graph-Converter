@@ -1269,6 +1269,7 @@ static Function/T createImageObj(image, graph)
 	string ctab, recreation
 	variable colormode = NumberByKey("COLORMODE", info, ":", ";", 1)
 	switch(colormode)	// DisplayHelpTopic "ImageInfo"
+		case 6:
 		case COLOR_MODE_CTABLE:
 			ctabStart = strsearch(info, "ctab", 0)
 			if(ctabStart == -1)
