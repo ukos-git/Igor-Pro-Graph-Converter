@@ -3415,7 +3415,7 @@ static Function oPlystring(plyName, str)
 		split = strsearch(str, "\",", NOTEBOOK_MAXBYTE, SEARCH_BACKWARDS)
 		if(split == -1)
 			split = strsearch(str, ",", NOTEBOOK_MAXBYTE - 1, SEARCH_BACKWARDS)
-		endif
+		else
 			split += 1
 		endif
 		Notebook $plyName text=(str[0, split] + "\r")
