@@ -1288,7 +1288,7 @@ static Function/T createImageObj(image, graph)
 			ctab = info[ctabstart + 7, ctabR - 1]
 			obj += CreateColorTab(ctab, $zWave, COLOR_MODE_CINDEX)
 			break
-		case 5:
+		case COLOR_MODE_EXPLICIT:
 			if(NumberByKey("explicit", info, "=") != 1)
 				Abort "Unhandled explicit mode"
 			endif
