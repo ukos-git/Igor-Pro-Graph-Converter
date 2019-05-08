@@ -1440,35 +1440,19 @@ static Function/T CreateTrObj(traceName, graph)
 	// Done sorting out the axes
 
 	// We do this duplication so that if we change the wave (ie, for cityscape or bar) it doesn't change locally
-	wave Tempyw = TraceNameToWaveRef(graph, traceName)
-	if(!cmpstr(Yrange, ""))
-		Duplicate/FREE Tempyw yw
-	else
-		// Use trace range for Duplicate
-		// @todo support quoted wave names
-		Execute ("Duplicate/O/R=" + Yrange + " " + GetWavesDataFolder(Tempyw, 2) + " root:Packages:Plotly:tempyw")
-		WAVE yw = root:Packages:Plotly:tempyw
+	WAVE original = TraceNameToWaveRef(graph, traceName)
+	wave temp = DuplicateFromRange(original, YRange)
+	Duplicate/FREE temp yw
 
-		// Reduce to one dimension
-		string expr="\[([[:digit:]\*]+)(?:,\s*([[:digit:]\*]+))?\](.*)"
-		string pRangeStart, pRangeStop
-		SplitString/E=(expr) Yrange, pRangeStart, pRangeStop, Yrange
-		string qRangeStart, qRangeStop
-		SplitString/E=(expr) Yrange, qRangeStart, qRangeStop, Yrange
-		if(!cmpstr(qRangeStop, "") && !!cmpstr(qRangeStart, "*"))
-			Redimension/N=(-1, 0) yw
-		elseif(!cmpstr(pRangeStop, "") && !!cmpstr(pRangeStop, "*"))
-			Redimension/E=1/N=(DimSize(yw, 1), 0) yw
-		endif
-	endif
 	variable trLen = DimSize(yw, 0)
 	if(!WaveExists(XWaveRefFromTrace(graph, traceName))) // Not plotted against x-wave, in other words, use igor Wave scaling.
 		Duplicate/FREE yw xw
 		xw = x
 		AutoX=1
 	else
-		WAVE TempXw = XWaveRefFromTrace(graph, traceName)
-		Duplicate/FREE TempXw xw
+		WAVE original = XWaveRefFromTrace(graph, traceName)
+		wave temp = DuplicateFromRange(original, XRange)
+		Duplicate/FREE temp xw
 	endif
 	if(!WaveType(xw)) // The x-wave is not numeric...this is a category plot
 		CategoryPlot = 1
@@ -3444,4 +3428,37 @@ Function WriteOutput(str, filename, [appendTo])
 		PathInfo home
 		printf "Error: Could not write to output file at %s\r", S_path + filename
 	endif
+End
+
+// takes a range in the form [*][2] and duplicates a wave to 1 dimension
+// can be used for the range returned from a trace info
+//
+// @todo support quoted wave names
+// @returns a fixed wave at root:Packages:Plotly:temp if any duplication was performed
+Function/WAVE DuplicateFromRange(wv, range)
+	WAVE wv
+	string range
+
+	string pRangeStart, pRangeStop
+	string qRangeStart, qRangeStop
+	string expr
+
+	if(!cmpstr(range, ""))
+		return wv
+	endif
+
+	Execute ("Duplicate/O/R=" + range + " " + GetWavesDataFolder(wv, 2) + " root:Packages:Plotly:temp")
+	WAVE temp = root:Packages:Plotly:temp
+
+	// Reduce to one dimension
+	expr="\[([[:digit:]\*]+)(?:,\s*([[:digit:]\*]+))?\](.*)"
+	SplitString/E=(expr) range, pRangeStart, pRangeStop, range
+	SplitString/E=(expr) range, qRangeStart, qRangeStop, range
+	if(!cmpstr(qRangeStop, "") && !!cmpstr(qRangeStart, "*"))
+		Redimension/N=(-1, 0) temp
+	elseif(!cmpstr(pRangeStop, "") && !!cmpstr(pRangeStop, "*"))
+		Redimension/E=1/N=(DimSize(temp, 1), 0) temp
+	endif
+
+	return temp
 End
