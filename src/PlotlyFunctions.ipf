@@ -1,4 +1,6 @@
-#pragma rtGlobals=3		// Use modern global access method and strict wave access.
+#pragma TextEncoding = "UTF-8"
+#pragma rtGlobals=3 // Use modern global access method and strict wave access.
+
 #include <Readback ModifyStr>
 #include <axis utilities>
 #include <Extract Contours As Waves>
@@ -6,8 +8,6 @@
 #include <Percentile and Box Plot>
 
 #include "PlotlyPrefs"
-
-// Requires Igor 6.1 or later for /FREE waves
 
 // Returns 1 if the colortable ctab is in this list, meaning that it is
 // discrete and should not be interpolated.  Users may add the wave name of
