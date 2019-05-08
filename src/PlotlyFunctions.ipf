@@ -3313,7 +3313,7 @@ static Function oPlystring(plyName, str)
 		// avoid splitting in between string arrays containing "rgb(0,0,0)"
 		split = strsearch(str, "\",", NOTEBOOK_MAXBYTE, SEARCH_BACKWARDS)
 		if(split == -1)
-			split = strsearch(str, ",", NOTEBOOK_MAXBYTE - 1, SEARCH_BACKWARDS)
+			split = strsearch(str, ",", NOTEBOOK_MAXBYTE, SEARCH_BACKWARDS)
 		else
 			split += 1
 		endif
