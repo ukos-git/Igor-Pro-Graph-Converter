@@ -763,6 +763,8 @@ static Function/S zSizeArray(SizeInfo, SizeCode)
 	print "Markers", MrkMin, MrkMAx
 	i=0
 	out += "[\r"
+	LargestMarkerSize = WaveMax(zWave)
+	LargestMarkersize = LargestMarkersize > zmx ? zmx : LargestMarkersize
 	do
 		if(zWave[i] < zmn) // This if statement handles marker sizes less than min and max.
 			val = zmn
@@ -772,15 +774,16 @@ static Function/S zSizeArray(SizeInfo, SizeCode)
 			val = zWave[i]
 		endif
 		variable PxSize
-		if(sizeCode == 2) // Markers
+		if(numtype(val) == 2)
+			pxSize = 0
+		elseif(numtype(val) == 1)
+			pxSize = LargestMarkerSize
+		elseif(sizeCode == 2) // Markers
 			pxSize = 2 * Mrk2Px(sizewave(val)) * ScreenResolution / 72
 		else // Text
 			pxSize = Txt2Px(sizewave(val))
 		endif
 		out += dub2str(pxSize) + ",\r"
-		if(pxSize > LargestMarkerSize)
-		 	LargestMarkerSize = pxSize // Have to keep of largest marker in the graph, in PX!
-		endif
 		i += 1
 	while(i < numSizes)
 
