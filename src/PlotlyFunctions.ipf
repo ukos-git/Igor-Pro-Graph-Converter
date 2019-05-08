@@ -1447,29 +1447,21 @@ static Function/T CreateTrObj(traceName, graph)
 	if(!cmpstr(Yrange, ""))
 		Duplicate/FREE Tempyw yw
 	else
-		// @todo support slicing for all possible variations: x-references with () and multiple dimensions.
+		// Use trace range for Duplicate
+		// @todo support quoted wave names
+		Execute ("Duplicate/O/R=" + Yrange + " " + GetWavesDataFolder(Tempyw, 2) + " root:Packages:Plotly:tempyw")
+		WAVE yw = root:Packages:Plotly:tempyw
+
+		// Reduce to one dimension
 		string expr="\[([[:digit:]\*]+)(?:,\s*([[:digit:]\*]+))?\](.*)"
 		string pRangeStart, pRangeStop
 		SplitString/E=(expr) Yrange, pRangeStart, pRangeStop, Yrange
-		if(!cmpstr(pRangeStart, "*") && !cmpstr(pRangeStop, ""))
-			pRangeStop = pRangeStart
-			pRangeStart = "0"
-		endif
-
 		string qRangeStart, qRangeStop
 		SplitString/E=(expr) Yrange, qRangeStart, qRangeStop, Yrange
-		if(!cmpstr(qRangeStart, "*") && !cmpstr(pRangeStop, ""))
-			qRangeStop = qRangeStart
-			qRangeStart = "0"
-		endif
-
-		if(!cmpstr(qRangeStart, "") && !cmpstr(qRangeStop, ""))
-			Duplicate/FREE/R=[str2num(pRangeStart), str2num(pRangeStop)] Tempyw yw
+		if(!cmpstr(qRangeStop, "") && !!cmpstr(qRangeStart, "*"))
 			Redimension/N=(-1, 0) yw
-		else
-			Duplicate/FREE/R=[str2num(pRangeStart)][str2num(qRangeStart), str2num(qRangeStop)] Tempyw yw
+		elseif(!cmpstr(pRangeStop, "") && !!cmpstr(pRangeStop, "*"))
 			Redimension/E=1/N=(DimSize(yw, 1), 0) yw
-			SetScale/P x, DimOffset(Tempyw, 1), DimDelta(Tempyw, 1), yw
 		endif
 	endif
 	variable trLen = DimSize(yw, 0)
