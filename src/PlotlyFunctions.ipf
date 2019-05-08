@@ -789,61 +789,140 @@ static Function/S zSizeArray(SizeInfo, SizeCode)
 	return out
 End
 
-static Function/T CreateColorTab(colorinfo, zwave[, cindex])
-	string colorinfo, cindex
-	wave zwave
-	variable index = 0
-	if(ParamIsDefault(cindex)) // color table
-		variable zMin = str2num(StringFromList(0, Colorinfo, ","))
-		variable zMax = str2num(StringFromList(1, Colorinfo, ","))
-		string ctName = StringFromList(2, Colorinfo, ",")
-		variable ReverseMode = str2num(StringFromList(3, Colorinfo, ","))
-		variable discrete
-		if(WhichListItem(ctName, Ctablist()) != -1)
-			ColorTab2Wave $ctName // Makes a Nx43 matrix for RGB name M_colors
-			WAVE M_colors = M_colors
-			discrete = DiscreteColorTable(ctName)
-		else
-			Duplicate/FREE $ctName M_colors /// @todo: user color tables not supported
-			discrete = 0
-		endif
-	else // color index
-		WaveStats/Q zwave
-		zMin = V_min
-		zMax = V_max
-		cindex = goodname(cindex)
-		Duplicate/FREE $cindex ciwave
-		Duplicate/o ciwave M_colors
-		discrete = 1
-		index = 1
-	endif
-	variable numColors = DimSize(M_colors, 0)
-	M_colors /= 257 // Plotly is 8-bit
-	variable i, j
+// supported color table modes
+static Constant COLOR_MODE_CTABLE   = 1
+static Constant COLOR_MODE_CINDEX   = 2
+static Constant COLOR_MODE_EXPLICIT = 5
 
-	string out = "\"colorscale\":[\r" // get ready to write the color scale
-	if(reversemode)
-		i = 0
-		do
-			j = (numcolors-1)-i
-			out += "[" + dub2str(j / (numColors - 1)) + ",\"rgb(" + dub2str(M_colors[i][0]) + "," + dub2str(M_colors[i][1]) + "," + dub2str(M_colors[i][2]) + ")\"],\r"
-			if(discrete && (i < numcolors - 1)) // Make the color table explicitly discrete colors, even in Plotly interpolates
-				out += "[" + dub2str((j - 1) / (numColors - 1)) + ",\"rgb(" + dub2str(M_colors[i][0]) + "," + dub2str(M_colors[i][1]) + "," + dub2str(M_colors[i][2]) + ")\"],\r"
+/// @brief create a plotly colorscale object
+///
+/// @todo use plotly color table equivivalents Greys,YlGnBu,Greens,YlOrRd,Bluered,RdBu,Reds,Blues,Picnic,Rainbow,Portland,Jet,Hot,Blackbody,Earth,Electric,Viridis,Cividis.
+/// @todo handle logarithmic parameter
+/// @todo support alpha channel rgbA
+static Function/T CreateColorTab(info, zwave, color_mode)
+	string info
+	wave zwave
+	variable color_mode
+
+	string cindex, ctName, evalStr
+	variable i, numColors
+	int rgbR, rgbG, rgbB
+	variable zMin, zMax, value
+	variable discrete = 0
+	variable reverseMode = 0
+	string out = ""
+
+	switch(color_mode)
+		case COLOR_MODE_CTABLE:
+			// ctab={zMin, zMax, ctName, reverse }
+			zMin = str2num(StringFromList(0, info, ","))
+			zMax = str2num(StringFromList(1, info, ","))
+			ctName = StringFromList(2, info, ",")
+			reverseMode = str2num(StringFromList(3, info, ","))
+			if(WhichListItem(ctName, Ctablist()) != -1)
+				ColorTab2Wave $ctName // Makes a Nx43 matrix for RGB name M_colors
+				WAVE/U/W M_colors
+				Duplicate/U/W/FREE M_colors ColorTabWave
+				discrete = DiscreteColorTable(ctName)
+			else
+				Duplicate/U/W/FREE $ctName ColorTabWave
 			endif
-			i += 1
-		while(i < numcolors)
-	else
-		i = 0
-		do
-			out += "[" + dub2str(i / (numColors - 1)) + ",\"rgb(" + dub2str(M_colors[i][0]) + "," + dub2str(M_colors[i][1]) + "," + dub2str(M_colors[i][2]) + ")\"],\r"
-			if(discrete && (i < numcolors - 1)) // Make the color table explicitly discrete colors, even in Plotly interpolates
-				out += "[" + dub2str((i + 1)/(numColors-1)) + ",\"rgb(" + dub2str(M_colors[i][0]) + "," + dub2str(M_colors[i][1]) + "," + dub2str(M_colors[i][2]) + ")\"],\r"
+			numColors = DimSize(ColorTabWave, 0)
+			Make/N=(numColors)/FREE ColorMappings = p / (numColors - 1)
+			break
+		case COLOR_MODE_CINDEX:
+			// cindex=matrixWave
+			WaveStats/Q zwave
+			zMin = V_min
+			zMax = V_max
+			cindex = goodname(info)
+			Duplicate/U/W/FREE $cindex ColorTabWave
+			numColors = DimSize(ColorTabWave, 0)
+			Make/N=(numColors)/FREE ColorMappings = p / (numColors - 1)
+			break
+		case COLOR_MODE_EXPLICIT:
+			// ----+------
+			// 255 |	black
+			// 0   |	white
+			// ----+------
+			Make/U/W/N=(2,3)/FREE ColorTabWave = {{65535,0},{65535,0},{65535,0}}
+			Make/N=2/FREE ColorMappings = {0, 255}
+			numColors = 2
+			zMin = NumberByKey("minRGB", info, "=")
+			zMax = NumberByKey("maxRGB", info, "=")
+			if(zMin == zMax) // @todo not sure how to handle this.
+				WaveStats/Q zwave
+				zMin = V_min
+				zMax = V_max
 			endif
-			i += 1
-		while(i < numcolors)
+			// eval={value, red, green, blue [, alpha]}
+			do
+				evalStr = StringByKey("eval", info, "=")
+				if(!cmpstr(evalStr, ""))
+					break
+				endif
+				evalStr = evalStr[1, strlen(evalStr) - 2] // remove {}
+				value = str2num(StringFromList(0, evalStr, ","))
+				rgbR  = str2num(StringFromList(1, evalStr, ","))
+				rgbG  = str2num(StringFromList(2, evalStr, ","))
+				rgbB  = str2num(StringFromList(3, evalStr, ","))
+				FindValue/V=(value) ColorMappings
+				if(V_Value == -1)
+					numColors += 1
+					Redimension/U/W/N=(numColors, -1) ColorTabWave
+					Redimension/N=(numColors) ColorMappings
+					ColorMappings[numColors - 1] = value
+					ColorTabWave[numColors - 1][0] = rgbR
+					ColorTabWave[numColors - 1][1] = rgbG
+					ColorTabWave[numColors - 1][2] = rgbB
+				else
+					ColorTabWave[V_Value][0] = rgbR
+					ColorTabWave[V_Value][1] = rgbG
+					ColorTabWave[V_Value][2] = rgbB
+				endif
+				info = RemoveByKey("eval", info, "=")
+			while(1)
+			colorMappings -= zMin
+			colorMappings /= zMax
+			break
+		default:
+			Abort "unsupported color mode"
+	endswitch
+
+	if(DimSize(ColorMappings, 0) != DimSize(ColorTabWave, 0))
+		Abort "Unexpected Error"
 	endif
+
+	ColorTabWave /= 257 // Plotly is 8-bit
+	if(reverseMode)
+		SortColumns/R keyWaves={ColorMappings}, sortWaves={ColorTabWave}
+		Sort/R ColorMappings, ColorMappings
+	else
+		SortColumns keyWaves={ColorMappings}, sortWaves={ColorTabWave}
+		Sort ColorMappings, ColorMappings
+	endif
+
+	// remove values outside of the range [0,1]
+	FindLevel/Q/P/EDGE=1 ColorMappings, 1
+	if(!V_flag)
+		DeletePoints/M=0 V_LevelX + 1, numColors - V_LevelX - 1, ColorMappings
+		DeletePoints/M=0 V_LevelX + 1, numColors - V_LevelX - 1, ColorTabWave
+		numColors = abs(V_LevelX - numColors)
+	endif
+
+	// write color scale member
+	out += "\"colorscale\":[\r"
+	numColors = DimSize(ColorTabWave, 0)
+	for(i = 0; i < numColors; i += 1)
+		out += "[" + dub2str(ColorMappings[i]) + ",\"rgb(" + dub2str(ColorTabWave[i][0]) + "," + dub2str(ColorTabWave[i][1]) + "," + dub2str(ColorTabWave[i][2]) + ")\"],\r"
+		// prevent plotly from interpolating by adding another color entry
+		if(discrete && (i < numcolors - 1))
+			out += "[" + dub2str(ColorMappings[i + 1]) + ",\"rgb(" + dub2str(ColorTabWave[i][0]) + "," + dub2str(ColorTabWave[i][1]) + "," + dub2str(ColorTabWave[i][2]) + ")\"],\r"
+		endif
+	endfor
 	out = out[0, strlen(out) - 3]
 	out += "\r],\r"
+
 	WaveStats/Q zwave
 	variable zlo, zhi
 	if(!numtype(zmin))
@@ -862,15 +941,6 @@ static Function/T CreateColorTab(colorinfo, zwave[, cindex])
 	out += "\"zmax\":" + dub2str(zmax) + ",\r"
 	out += "\"zauto\":false,\r"
 	return out
-
-	// Logarithmic Indexed Color
-	// For logarithmic indexed color (the ModifyImage log parameter is set to 1), colors are mapped using the log(x scaling) and log(image z) values this way:
-	// colorIndexWaveRow = floor(nRows*(log(zImageValue)-log(xMin))/(log(xmax)-log(xMin)))
-	// where,
-	// nRows = DimSize(colorIndexWave, 0)
-	// xMin = DimOffset(colorIndexWave, 0)
-	// xMax = xMin + (nRows-1) * DimDelta(colorIndexWave, 0)
-	// Displaying image data in log mode will be slower than in linear mode.
 End
 
 // This function outputs everything needed after "color": to do an array of
@@ -963,7 +1033,7 @@ static Function/T CreateContourObj(contour, graph)
 	string Tnam = StringByKey("T", AxisFlags, "=", "/", 1)
 	string Rnam = StringByKey("R", AxisFlags, "=", "/", 1)
 	string Bnam = StringByKey("B", AxisFlags, "=", "/", 1)
-	variable rgbR, rgbG, rgbB
+	int rgbR, rgbG, rgbB
 	variable setlinecolor=0
 
 	// Look out for axis swap and add names of axes to a vertical and horizontal list
@@ -1039,11 +1109,11 @@ static Function/T CreateContourObj(contour, graph)
 	if(ctabstart > -1) // This is a color table contour
 		variable ctabR = strsearch(info, ";", ctabStart)
 		string ctab = info[ctabstart + 11, ctabR - 2]
-		obj += CreateColorTab(ctab, $zWave)
+		obj += CreateColorTab(ctab, $zWave, COLOR_MODE_CTABLE)
 	elseif(cindexStart > -1) // This is a color index contour
 		ctabR = strsearch(info, ";", cindexstart)
 		ctab = info[cindexstart + 12, ctabR - 1]
-		obj += CreateColorTab("Cindex", $zWave, cindex = ctab)
+		obj += CreateColorTab("Cindex", $zWave, COLOR_MODE_CINDEX)
 	else // We specify an RGB for the contour.
 	 	ctab = StringByKey("rgbLines", info, "=", ";", 1)
 		ctab = "color(x)=" + ctab // Add a key for the standard format for the key searcher
@@ -1192,18 +1262,45 @@ static Function/T createImageObj(image, graph)
 		endif
 	endif
 	obj += "\"z\":" + Wave2DtoJSONArray($zwave, axisIsSwapped) + ",\r"
+
 	// Get the colorscale
-	variable ctabStart = strsearch(info, "ctab", 0)
-	if(ctabStart > -1) // We DO have a color table
-		variable ctabR = strsearch(info, ";", ctabStart)
-		string ctab = info[ctabstart + 7, ctabR - 2]
-		obj += CreateColorTab(ctab, $zWave)
-	else // We do not have a color table, we must have a color index
-		ctabstart = strsearch(info, "cindex", 0)
-		ctabR = strsearch(info, ";", ctabstart)
-		ctab = info[ctabstart + 7, ctabR - 1]
-		obj += CreateColorTab("Cindex", $zWave, cindex = ctab)
-	endif
+	// @see WMGetColorsFromGraph()
+	variable ctabStart, cindexStart, ctabR
+	string ctab, recreation
+	variable colormode = NumberByKey("COLORMODE", info, ":", ";", 1)
+	switch(colormode)	// DisplayHelpTopic "ImageInfo"
+		case 6:
+		case COLOR_MODE_CTABLE:
+			ctabStart = strsearch(info, "ctab", 0)
+			if(ctabStart == -1)
+				Abort
+			endif
+			ctabR = strsearch(info, ";", ctabStart)
+			ctab = info[ctabstart + 7, ctabR - 2]
+			obj += CreateColorTab(ctab, $zWave, COLOR_MODE_CTABLE)
+			break
+		case COLOR_MODE_CINDEX:
+			cindexStart = strsearch(info, "cindex", 0)
+			if(cindexStart == -1)
+				Abort
+			endif
+			ctabR = strsearch(info, ";", ctabstart)
+			ctab = info[ctabstart + 7, ctabR - 1]
+			obj += CreateColorTab(ctab, $zWave, COLOR_MODE_CINDEX)
+			break
+		case COLOR_MODE_EXPLICIT:
+			if(NumberByKey("explicit", info, "=") != 1)
+				Abort "Unhandled explicit mode"
+			endif
+			obj += CreateColorTab(WMGetRECREATIONFromInfo(info), $zWave, COLOR_MODE_EXPLICIT)
+			break
+		case 3: // point-scaled color index
+		case 4: // direct color from z wave
+		default: // not handled
+			InitNotebook("DebugColorTabImageInfo")
+			oPlystring("DebugColorTabImageInfo", info)
+			Abort "Please report the need for this colormode on github"
+	endswitch
 
 	obj += "\"type\":\"heatmap\",\r"
 	obj += "\"name\":\"" + image + "\",\r"
@@ -1488,9 +1585,10 @@ static Function/T CreateTrObj(traceName, graph)
 
 	// Get the main color information for this trace.
 	string RGB_Array=""		// We'll store data here if a color array is needed
-	variable rgbR = round(GetNumFromModifyStr(info, "rgb", "(", 0)/257)
-	variable rgbG = round(GetNumFromModifyStr(info, "rgb", "(", 1)/257)
-	variable rgbB = round(GetNumFromModifyStr(info, "rgb", "(", 2)/257)
+	int rgbR, rgbG, rgbB
+	rgbR = round(GetNumFromModifyStr(info, "rgb", "(", 0)/257)
+	rgbG = round(GetNumFromModifyStr(info, "rgb", "(", 1)/257)
+	rgbB = round(GetNumFromModifyStr(info, "rgb", "(", 2)/257)
 	string TraceRGB = "\"rgb(" + dub2str(rgbR) + "," + dub2str(rgbG) + "," + dub2str(rgbB) + ")\""
 	variable hbFill = GetNumFromModifyStr(info, "hbFill", "", 0)
 	variable FillA = 1
@@ -1571,7 +1669,7 @@ static Function/T CreateTrObj(traceName, graph)
 
 	// Fill information for Fill to Zero
 	if(mode == 7 || mode == 6)
-			variable PlusrgbR, plusrgbG, plusrgbB
+			int PlusrgbR, plusrgbG, plusrgbB
 			if(tomode == 1) // Fill to next, but in Plotly it's fill to last so reverst the ordering
 				TraceOrderFlag=1
 				obj += "\"fill\":\"tonexty\",\r"
@@ -1602,9 +1700,10 @@ static Function/T CreateTrObj(traceName, graph)
 		if(MrkrSize == 0)
 			MrkrSize = defaultMarkerSize
 		endif
-		variable MrkrrgbR = round(GetNumFromModifyStr(info, "mrkStrokeRGB", "(", 0)/257) // These are the marker stroke colors reported by Igor
-		variable mrkrrgbG = round(GetNumFromModifyStr(info, "mrkStrokeRGB", "(", 1)/257)
-		variable MrkrrgbB = round(GetNumFromModifyStr(info, "mrkStrokeRGB", "(", 2)/257)
+		int MrkrrgbR, MrkrrgbG, MrkrrgbB
+		MrkrrgbR = round(GetNumFromModifyStr(info, "mrkStrokeRGB", "(", 0)/257) // These are the marker stroke colors reported by Igor
+		mrkrrgbG = round(GetNumFromModifyStr(info, "mrkStrokeRGB", "(", 1)/257)
+		MrkrrgbB = round(GetNumFromModifyStr(info, "mrkStrokeRGB", "(", 2)/257)
 		string MarkerRGB = "\"rgb(" + dub2str(MrkrrgbR) + "," + dub2str(MrkrrgbG) + "," + dub2str(MrkrrgbB) + ")\""
 		variable UseMrkrStroke = GetNumFromModifyStr(info, "useMrkStrokeRGB", "", 0)
 		variable opaque = GetNumFromModifyStr(info, "opaque", "", 0)
@@ -1699,7 +1798,6 @@ static Function/T CreateTrObj(traceName, graph)
 			txtinfo = txtinfo[infopntr + 1, inf]
 			infopntr = strsearch(txtinfo, ",", 0)
 			string txtFont = txtinfo[0, infopntr - 1]
-			string txtrgbR, txtrgbG, txtrgbB
 
 			obj += "\"textfont\":{\r"
 			obj += "\"family\":" + txtFont + ",\r"
@@ -1997,9 +2095,7 @@ static Function/T createAxisObj(axisName, PlyAxisName, graph, Orient, AxisNum)
 	NVAR barGap = root:Packages:Plotly:barGap
 	SVAR BarToMode = root:packages:Plotly:BarToMode
 	NVAR catCount = root:packages:Plotly:CatCount
-	variable rgbR
-	variable rgbG
-	variable rgbB
+	int rgbR, rgbG, rgbB
 
 	string XAxis = StringByKey("XAXIS", info, ":", ";", 1) // Get the name of the x-axis
 	string YAxis = StringByKey("YAXIS", info, ":", ";", 1) // Get the name of the y-axis
@@ -2640,6 +2736,7 @@ static Function/T CreateColorScaleObj(Name, graph, trace)
 	string anchorCode, backCode, dflag, TxtColor, Rotation, exterior, Xpos, Ypos
 	variable BarWidth, frame
 	variable absX, absY, fracx, fracy
+	int rgbR, rgbG, rgbB, rgbA
 
 	// Look up the size of the graph window, in points
 	GetWindow $graph, gsize
@@ -2654,7 +2751,6 @@ static Function/T CreateColorScaleObj(Name, graph, trace)
 	variable p_right = V_right
 	variable p_top = V_top
 	variable p_bottom = V_bottom
-	variable rgbR, rgbG, rgbB, rgbA
 
 	// Annotation is not a color scale
 	if(!StringMatch(type, "ColorScale"))
@@ -3333,25 +3429,6 @@ static Function/s Strip(str)
 	/// @todo figure out how to "grep" or othwise remove spaces preceeding the CR
 	return ReplaceString("\r", str, "")
 End
-
-static Function ExtractRGB(rgbR, rgbG, rgbB, key, graph)
-	variable &rgbR, &rgbG, &rgbB
-	string key
-	string graph
-
-	string info
-	variable index
-	string window_macro = WinRecreation(graph, 1)
-
-	index = strsearch(window_macro, key, 0)
-	if(index < -1) // @todo check this condition
-		print"Note, did not find the key"
-		return 0
-	else
-		print "return", index, strsearch(window_macro, "\r", index)
-	endif
-End
-
 
 /// Writes string str to filename
 Function WriteOutput(str, filename, [appendTo])
