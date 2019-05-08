@@ -1,4 +1,6 @@
-#pragma rtGlobals=3		// Use modern global access method and strict wave access.
+#pragma TextEncoding = "UTF-8"
+#pragma rtGlobals=3 // Use modern global access method and strict wave access.
+
 #include <Readback ModifyStr>
 #include <axis utilities>
 #include <Extract Contours As Waves>
@@ -6,8 +8,6 @@
 #include <Percentile and Box Plot>
 
 #include "PlotlyPrefs"
-
-// Requires Igor 6.1 or later for /FREE waves
 
 // Returns 1 if the colortable ctab is in this list, meaning that it is
 // discrete and should not be interpolated.  Users may add the wave name of
@@ -763,6 +763,8 @@ static Function/S zSizeArray(SizeInfo, SizeCode)
 	print "Markers", MrkMin, MrkMAx
 	i=0
 	out += "[\r"
+	LargestMarkerSize = WaveMax(zWave)
+	LargestMarkersize = LargestMarkersize > zmx ? zmx : LargestMarkersize
 	do
 		if(zWave[i] < zmn) // This if statement handles marker sizes less than min and max.
 			val = zmn
@@ -772,15 +774,16 @@ static Function/S zSizeArray(SizeInfo, SizeCode)
 			val = zWave[i]
 		endif
 		variable PxSize
-		if(sizeCode == 2) // Markers
+		if(numtype(val) == 2)
+			pxSize = 0
+		elseif(numtype(val) == 1)
+			pxSize = LargestMarkerSize
+		elseif(sizeCode == 2) // Markers
 			pxSize = 2 * Mrk2Px(sizewave(val)) * ScreenResolution / 72
 		else // Text
 			pxSize = Txt2Px(sizewave(val))
 		endif
 		out += dub2str(pxSize) + ",\r"
-		if(pxSize > LargestMarkerSize)
-		 	LargestMarkerSize = pxSize // Have to keep of largest marker in the graph, in PX!
-		endif
 		i += 1
 	while(i < numSizes)
 
@@ -3414,7 +3417,7 @@ static Function oPlystring(plyName, str)
 		// avoid splitting in between string arrays containing "rgb(0,0,0)"
 		split = strsearch(str, "\",", NOTEBOOK_MAXBYTE, SEARCH_BACKWARDS)
 		if(split == -1)
-			split = strsearch(str, ",", NOTEBOOK_MAXBYTE - 1, SEARCH_BACKWARDS)
+			split = strsearch(str, ",", NOTEBOOK_MAXBYTE, SEARCH_BACKWARDS)
 		else
 			split += 1
 		endif
