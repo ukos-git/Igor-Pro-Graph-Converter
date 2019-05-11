@@ -2886,13 +2886,19 @@ static Function/T CreateColorScaleObj(Name, graph, trace)
 	obj += "\"color\":\"rgb(" + dub2str(rgbR) + "," + dub2str(rgbG) + "," + dub2str(rgbB) + ")\",\r"
 	obj = obj[0, strlen(obj) - 3]
 	obj += "\r},\r"
-	variable Fri = strsearch(csInfo, "frameRGB", 0)
+	variable Fri, FrEnd
+	string FrameRGB
+	Fri = strsearch(csInfo, "frameRGB", 0)
 	if(Fri > -1)
-		variable FrEnd = strsearch(csInfo, ")", Fri + 1)
-		string FrameRGB = "frameRGB(x)=" + csInfo[Fri + 9, FrEnd]
-		rgbR = round(GetNumFromModifyStr(FrameRGB, "frameRGB", "(", 0) / 257)
-		rgbG = round(GetNumFromModifyStr(FrameRGB, "rameRGB", "(", 1) / 257)
-		rgbB = round(GetNumFromModifyStr(FrameRGB, "rameRGB", "(", 2) / 257)
+		if(NumberByKey("frameRGB", csInfo, "=", ",") == 0)
+			// use colorscale foreground color
+		else
+			FrEnd = strsearch(csInfo, ")", Fri + 1)
+			FrameRGB = "frameRGB(x)=" + csInfo[Fri + 9, FrEnd]
+			rgbR = round(GetNumFromModifyStr(FrameRGB, "frameRGB", "(", 0) / 257)
+			rgbG = round(GetNumFromModifyStr(FrameRGB, "rameRGB", "(", 1) / 257)
+			rgbB = round(GetNumFromModifyStr(FrameRGB, "rameRGB", "(", 2) / 257)
+		endif
 	endif
 	obj += "\"outlinecolor\":\"rgb(" + dub2str(rgbR) + "," + dub2str(rgbG) + "," + dub2str(rgbB) + ")\",\r"
 	obj = obj[0, strlen(obj) - 3]
