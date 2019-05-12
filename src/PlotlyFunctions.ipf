@@ -3452,9 +3452,16 @@ Function/WAVE DuplicateFromRange(wv, range)
 	string pRangeStart, pRangeStop
 	string qRangeStart, qRangeStop
 	string expr
+	variable rangeTest, rangeStep
 
 	if(!cmpstr(range, ""))
 		return wv
+	endif
+
+	rangeTest = strsearch(range, ":", 0)
+	if(rangeTest != -1)
+		rangeStep = str2num(range[rangeTest + 1, strlen(range) - 2])
+		range = range[0, rangeTest - 1] + "]"
 	endif
 
 	Execute ("Duplicate/O/R=" + range + " " + GetWavesDataFolder(wv, 2) + " root:Packages:Plotly:temp")
@@ -3468,6 +3475,10 @@ Function/WAVE DuplicateFromRange(wv, range)
 		Redimension/N=(-1, 0) temp
 	elseif(!cmpstr(pRangeStop, "") && !!cmpstr(pRangeStop, "*"))
 		Redimension/E=1/N=(DimSize(temp, 1), 0) temp
+	endif
+
+	if(rangeStep > 0)
+		Resample/DOWN=(rangeStep) temp
 	endif
 
 	return temp
