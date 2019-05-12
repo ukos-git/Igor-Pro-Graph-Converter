@@ -2264,14 +2264,14 @@ static Function/T createAxisObj(axisName, PlyAxisName, graph, Orient, AxisNum)
 	else
 		obj += "\"zeroline\" : false,\r"
 	endif
-	// Mirror : "true", "ticks", "false", "all", "all, ticks"
+	// Mirror : "true", "ticks", "false", "all", "allticks"
 	variable mirror = GetNumFromModifyStr(info, "mirror", "", 0)
 	if(mirror == 1)
 		obj += "\"mirror\" : \"ticks\",\r"
 	elseif(mirror == 2)
 		obj += "\"mirror\" : true,\r"
 	elseif(mirror == 3)
-		obj += "\"mirror\" : \"all, ticks\",\r"
+		obj += "\"mirror\" : \"allticks\",\r"
 	else
 		obj += "\"mirror\" : false,\r"
 	endif
