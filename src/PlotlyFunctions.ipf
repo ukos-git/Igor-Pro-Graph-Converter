@@ -3392,7 +3392,7 @@ static Function InitNotebook(plyName)
 End
 
 static Constant SEARCH_BACKWARDS = 1
-static Constant NOTEBOOK_MAXBYTE = 64999
+static Constant NOTEBOOK_MAXBYTE = 64998
 
 static Function oPlystring(plyName, str)
 	string plyName, str
