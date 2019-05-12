@@ -2646,8 +2646,9 @@ static Function/T CreateLegendObj(Name, graph, IsLegend)
 	absx = str2num(StringByKey("ABSX", info, ":", ";", 1))
 	absy = str2num(StringByKey("ABSY", info, ":", ";", 1))
 	fracx = (absx - p_left) / (p_right - p_left)
-	fracx = max(min(fracx, 3), -2) /// @todo Issue #17
+	fracx = max(-2, min(3, fracx))
 	fracy = (absy - p_bottom) / (p_top - p_bottom)
+	fracy = max(-2, min(3, fracy))
 	obj += "\"x\":" + dub2str(fracx) + ",\r"
 	obj += "\"y\":" + dub2str(fracy) + ",\r"
 	obj += AnchorText(anchorcode)
