@@ -1440,43 +1440,19 @@ static Function/T CreateTrObj(traceName, graph)
 	// Done sorting out the axes
 
 	// We do this duplication so that if we change the wave (ie, for cityscape or bar) it doesn't change locally
-	wave Tempyw = TraceNameToWaveRef(graph, traceName)
-	if(!cmpstr(Yrange, ""))
-		Duplicate/FREE Tempyw yw
-	else
-		// @todo support slicing for all possible variations: x-references with () and multiple dimensions.
-		string expr="\[([[:digit:]\*]+)(?:,\s*([[:digit:]\*]+))?\](.*)"
-		string pRangeStart, pRangeStop
-		SplitString/E=(expr) Yrange, pRangeStart, pRangeStop, Yrange
-		if(!cmpstr(pRangeStart, "*") && !cmpstr(pRangeStop, ""))
-			pRangeStop = pRangeStart
-			pRangeStart = "0"
-		endif
+	WAVE original = TraceNameToWaveRef(graph, traceName)
+	wave temp = DuplicateFromRange(original, YRange)
+	Duplicate/FREE temp yw
 
-		string qRangeStart, qRangeStop
-		SplitString/E=(expr) Yrange, qRangeStart, qRangeStop, Yrange
-		if(!cmpstr(qRangeStart, "*") && !cmpstr(pRangeStop, ""))
-			qRangeStop = qRangeStart
-			qRangeStart = "0"
-		endif
-
-		if(!cmpstr(qRangeStart, "") && !cmpstr(qRangeStop, ""))
-			Duplicate/FREE/R=[str2num(pRangeStart), str2num(pRangeStop)] Tempyw yw
-			Redimension/N=(-1, 0) yw
-		else
-			Duplicate/FREE/R=[str2num(pRangeStart)][str2num(qRangeStart), str2num(qRangeStop)] Tempyw yw
-			Redimension/E=1/N=(DimSize(yw, 1), 0) yw
-			SetScale/P x, DimOffset(Tempyw, 1), DimDelta(Tempyw, 1), yw
-		endif
-	endif
 	variable trLen = DimSize(yw, 0)
 	if(!WaveExists(XWaveRefFromTrace(graph, traceName))) // Not plotted against x-wave, in other words, use igor Wave scaling.
 		Duplicate/FREE yw xw
 		xw = x
 		AutoX=1
 	else
-		WAVE TempXw = XWaveRefFromTrace(graph, traceName)
-		Duplicate/FREE TempXw xw
+		WAVE original = XWaveRefFromTrace(graph, traceName)
+		wave temp = DuplicateFromRange(original, XRange)
+		Duplicate/FREE temp xw
 	endif
 	if(!WaveType(xw)) // The x-wave is not numeric...this is a category plot
 		CategoryPlot = 1
@@ -3462,4 +3438,48 @@ Function WriteOutput(str, filename, [appendTo])
 		PathInfo home
 		printf "Error: Could not write to output file at %s\r", S_path + filename
 	endif
+End
+
+// takes a range in the form [*][2] and duplicates a wave to 1 dimension
+// can be used for the range returned from a trace info
+//
+// @todo support quoted wave names
+// @returns a fixed wave at root:Packages:Plotly:temp if any duplication was performed
+Function/WAVE DuplicateFromRange(wv, range)
+	WAVE wv
+	string range
+
+	string pRangeStart, pRangeStop
+	string qRangeStart, qRangeStop
+	string expr
+	variable rangeTest, rangeStep
+
+	if(!cmpstr(range, ""))
+		return wv
+	endif
+
+	rangeTest = strsearch(range, ":", 0)
+	if(rangeTest != -1)
+		rangeStep = str2num(range[rangeTest + 1, strlen(range) - 2])
+		range = range[0, rangeTest - 1] + "]"
+	endif
+
+	Execute ("Duplicate/O/R=" + range + " " + GetWavesDataFolder(wv, 2) + " root:Packages:Plotly:temp")
+	WAVE temp = root:Packages:Plotly:temp
+
+	// Reduce to one dimension
+	expr="\[([[:digit:]\*]+)(?:,\s*([[:digit:]\*]+))?\](.*)"
+	SplitString/E=(expr) range, pRangeStart, pRangeStop, range
+	SplitString/E=(expr) range, qRangeStart, qRangeStop, range
+	if(!cmpstr(qRangeStop, "") && !!cmpstr(qRangeStart, "*"))
+		Redimension/N=(-1, 0) temp
+	elseif(!cmpstr(pRangeStop, "") && !!cmpstr(pRangeStop, "*"))
+		Redimension/E=1/N=(DimSize(temp, 1), 0) temp
+	endif
+
+	if(rangeStep > 0)
+		Resample/DOWN=(rangeStep) temp
+	endif
+
+	return temp
 End
