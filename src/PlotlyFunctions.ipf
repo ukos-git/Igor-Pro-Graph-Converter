@@ -3381,7 +3381,7 @@ static Function InitNotebook(plyName)
 End
 
 static Constant SEARCH_BACKWARDS = 1
-static Constant NOTEBOOK_MAXBYTE = 64999
+static Constant NOTEBOOK_MAXBYTE = 64998
 
 static Function oPlystring(plyName, str)
 	string plyName, str
@@ -3400,11 +3400,9 @@ static Function oPlystring(plyName, str)
 
 	do
 		// avoid splitting in between string arrays containing "rgb(0,0,0)"
-		split = strsearch(str, "\",", NOTEBOOK_MAXBYTE, SEARCH_BACKWARDS)
+		split = strsearch(str, ",\"", NOTEBOOK_MAXBYTE, SEARCH_BACKWARDS)
 		if(split == -1)
 			split = strsearch(str, ",", NOTEBOOK_MAXBYTE, SEARCH_BACKWARDS)
-		else
-			split += 1
 		endif
 		Notebook $plyName text=(str[0, split] + "\r")
 		str = str[split + 1, inf]
