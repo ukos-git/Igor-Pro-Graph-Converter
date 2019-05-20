@@ -3434,8 +3434,10 @@ static Function oPlystring(plyName, str)
 	endif
 
 	do
-		// avoid splitting in between string arrays containing "rgb(0,0,0)"
-		split = strsearch(str, ",\"", NOTEBOOK_MAXBYTE, SEARCH_BACKWARDS)
+		split = strsearch(str, "\r", NOTEBOOK_MAXBYTE, SEARCH_BACKWARDS)
+		if(split == -1)
+			split = strsearch(str, ",\"", NOTEBOOK_MAXBYTE, SEARCH_BACKWARDS)
+		endif
 		if(split == -1)
 			split = strsearch(str, ",", NOTEBOOK_MAXBYTE, SEARCH_BACKWARDS)
 		endif
