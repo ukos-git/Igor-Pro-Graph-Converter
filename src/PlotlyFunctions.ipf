@@ -2333,40 +2333,11 @@ static Function/T createAxisObj(axisName, PlyAxisName, graph, Orient, AxisNum)
 		endif
 	endif
 
-	// Axis Range and axis side assignment This is complicated because of the need to do standoff.
 	Getaxis/W=$Graph/Q $axisName // get the igor range
-	variable IgLo = V_min
-	variable IgHi = V_max
-	variable PlyLo
-	variable PlyHi
-	GetWindow $graph, psizeDC // Look up the plot px dimensions
-	variable pheight = V_bottom - V_top
-	variable pwidth = V_right - V_left
-	variable p_bottom = V_bottom
-	variable p_top = V_top
-	variable p_left = V_left
-	variable p_right = V_right
-	variable numPerpx
+	variable PlyLo = V_min
+	variable PlyHi = V_max
 
 	variable IsLog= GetNumFromModifyStr(info, "log", "", 0)
-	if(StringMatch(orient, "H") && !isLog) // can't do simple standoff calc on log axis
-		NumPerPX= abs(IgLo-IgHi)/pwidth
-		PlyLo = IgLo - (LargestMarkerSize * 2.25) * NumPerPx // if you change this, also need to take care of Free axis section. Changed from /1.25 to *1.25 because of apparent marker size change
-		PlyHi = IgHi + (LargestMarkerSize * 2.25) * NumPerPx
-	elseif(StringMatch(orient, "H"))
-		NumPerPx = (abs(log(IgLo))-abs(log(IgHi)))/pwidth
-		PlyLo = log(IgLo) - (LargestMarkerSize * 2.25) * NumPerPx
-		PlyHi = log(IgHi) + (LargestMarkerSize * 2.25) * NumPerPx
-	endif
-	if(StringMatch(orient, "V")&& !isLog) // Can't do simple standoff calc on log axis
-		NumPerPX = abs(IgLo-IgHi) / pheight
-		PlyLo = IgLo - (LargestMarkerSize * 2.25) * NumPerPx
-		PlyHi = IgHi + (LargestMarkerSize * 2.25) * NumPerPx
-	elseif(StringMatch(orient, "V"))
-		NumPerPx = (abs(log(IgLo)) - abs(log(IgHi))) / pheight
-		PlyLo = log(IgLo) - (LargestMarkerSize * 2.25) * NumPerPx
-		PlyHi = log(IgHi) + (LargestMarkerSize * 2.25) * NumPerPx
-	endif
 
 	variable IsCat = NumberByKey("ISCAT", info, ":", ";", 0)
 	if(IsCat)
