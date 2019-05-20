@@ -2200,10 +2200,20 @@ static Function/T createAxisObj(axisName, PlyAxisName, graph, Orient, AxisNum)
 	variable defaultTextSizePT = GetDefaultFontSize(graph, "") // This number is returned in POINTS
 
 	// Axis Label/Title
-	string LblTxt = AxisLabelText(graph, axisName, SuppressEscaping=1)
-	string altFont
+	variable noLabel
+	string altFont, LblTxt
 	variable altFontSize, OZ
+
+	// get label text, font family and font size
+	LblTxt = AxisLabelText(graph, axisName, SuppressEscaping = 1)
 	LblTxt = ProcessText(LblTxt, altFont, altFontsize, OZ)
+
+	// remove label text, keep font info
+	noLabel = GetNumFromModifyStr(info, "noLabel", "", 0)
+	if(noLabel == 2)
+		LblTxt = "<br>"
+	endif
+
 	obj += "\"title\":\"" + LblTxt + "\",\r"
 	obj += "\"titlefont\":{\r"
 	if(!StringMatch(altFont, "default"))
@@ -2266,39 +2276,44 @@ static Function/T createAxisObj(axisName, PlyAxisName, graph, Orient, AxisNum)
 	endif
 
 	// Tick Visuals
-	variable btThick = GetNumFromModifyStr(info, "btThick", "", 0)
-	if(btThick == 0 )
-		btThick = axThick
-	endif
-	obj += "\"tickwidth\":" + num2str(btThick) + ",\r"
-	obj += "\"tickcolor\":\"rgb(" + dub2str(rgbR) + "," + dub2str(rgbG) + "," + dub2str(rgbB) + ")\",\r" // Same as axis color
-	obj += "\"tickfont\":{\r"
-	rgbR = round(GetNumFromModifyStr(info, "tlblRGB", "(", 0)/257)
-	rgbG = round(GetNumFromModifyStr(info, "tlblRGB", "(", 1)/257)
-	rgbB = round(GetNumFromModifyStr(info, "tlblRGB", "(", 2)/257)
-	obj += "\"color\":\"rgb(" + dub2str(rgbR) + "," + dub2str(rgbG) + "," + dub2str(rgbB) + ")\"\r"
-	obj += "},\r"
-
-	variable btLen = GetNumFromModifyStr(info, "btLen", "", 0)
-	if(btLen == 0)
-		btLen = defaultTickLength
-	endif
-	obj += "\"ticklen\":" + num2str(btLen) + ",\r"
-	variable tickType = GetNumFromModifyStr(info, "tick", "", 0)
-	if(tickType == 0)
-		obj += "\"ticks\" : \"outside\",\r"
-	elseif(tickType == 1) // Crossing axes...not sure what to do, not supported by Plotly
-		obj += "\"ticks\" : \"crossing\",\r"
-		print "WARNING: Crossing ticks not supported by Plotly"
-	elseif(tickType == 2)
-		obj += "\"ticks\" : \"inside\",\r"
-	else
-		obj += "\"ticks\" : \"\",\r"
-	endif
-	variable noLabel = GetNumFromModifyStr(info, "noLabel", "", 0) // Decide whether to show tick labels
-	if(noLabel == 1 || noLabel == 2)
+	if(noLabel == 2)
+		obj += "\"ticks\": \"\",\r"
 		obj += "\"showticklabels\":false,\r"
+	else
+		variable btThick = GetNumFromModifyStr(info, "btThick", "", 0)
+		if(btThick == 0 )
+			btThick = axThick
+		endif
+		obj += "\"tickwidth\":" + num2str(btThick) + ",\r"
+		obj += "\"tickcolor\":\"rgb(" + dub2str(rgbR) + "," + dub2str(rgbG) + "," + dub2str(rgbB) + ")\",\r" // Same as axis color
+		obj += "\"tickfont\":{\r"
+		rgbR = round(GetNumFromModifyStr(info, "tlblRGB", "(", 0)/257)
+		rgbG = round(GetNumFromModifyStr(info, "tlblRGB", "(", 1)/257)
+		rgbB = round(GetNumFromModifyStr(info, "tlblRGB", "(", 2)/257)
+		obj += "\"color\":\"rgb(" + dub2str(rgbR) + "," + dub2str(rgbG) + "," + dub2str(rgbB) + ")\"\r"
+		obj += "},\r"
+	
+		variable btLen = GetNumFromModifyStr(info, "btLen", "", 0)
+		if(btLen == 0)
+			btLen = defaultTickLength
+		endif
+		obj += "\"ticklen\":" + num2str(btLen) + ",\r"
+		variable tickType = GetNumFromModifyStr(info, "tick", "", 0)
+		if(tickType == 0)
+			obj += "\"ticks\" : \"outside\",\r"
+		elseif(tickType == 1) // Crossing axes...not sure what to do, not supported by Plotly
+			obj += "\"ticks\" : \"crossing\",\r"
+			print "WARNING: Crossing ticks not supported by Plotly"
+		elseif(tickType == 2)
+			obj += "\"ticks\" : \"inside\",\r"
+		else
+			obj += "\"ticks\" : \"\",\r"
+		endif
+		if(noLabel == 1)
+			obj += "\"showticklabels\":false,\r"
+		endif
 	endif
+
 	// Axis Range and axis side assignment This is complicated because of the need to do standoff.
 	Getaxis/W=$Graph/Q $axisName // get the igor range
 	variable IgLo = V_min
