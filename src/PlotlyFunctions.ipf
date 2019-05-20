@@ -799,7 +799,6 @@ static Constant COLOR_MODE_EXPLICIT = 5
 
 /// @brief create a plotly colorscale object
 ///
-/// @todo use plotly color table equivivalents Greys,YlGnBu,Greens,YlOrRd,Bluered,RdBu,Reds,Blues,Picnic,Rainbow,Portland,Jet,Hot,Blackbody,Earth,Electric,Viridis,Cividis.
 /// @todo handle logarithmic parameter
 /// @todo support alpha channel rgbA
 static Function/T CreateColorTab(info, zwave, color_mode)
@@ -826,9 +825,50 @@ static Function/T CreateColorTab(info, zwave, color_mode)
 			reverseMode = str2num(StringFromList(3, info, ","))
 			if(WhichListItem(ctName, Ctablist()) != -1)
 				strswitch(ctName)
+					/// @todo missing plotly color table equivivalents for
+					/// YlGnBu YlOrRd Picnic Portland Jet Viridis Cividis
+					case "YellowHot256":
 					case "YellowHot":
-						plotlymap = "YlOrRd"
-						discrete = 0
+						plotlymap = "Hot"
+						break
+					case "Rainbow16":
+						discrete = 1
+					case "Rainbow256":
+					case "Rainbow":
+						plotlymap = "Rainbow"
+						break
+					case "Grays16":
+						discrete = 1
+					case "Grays256":
+					case "Grays":
+						plotlymap = "Greys"
+						break
+					case "BlueBlackRed":
+						plotlymap = "Bluered"
+						break
+					case "Red":
+						plotlymap = "Reds"
+						break
+					case "Green":
+						plotlymap = "Greens"
+						break
+					case "Blue":
+						plotlymap = "Blues"
+						break
+					case "RedWhiteBlue":
+						plotlymap = "RdBu"
+						break
+					case "BlueHot256":
+					case "BlueHot":
+						plotlymap = "Blackbody"
+						break
+					case "Terrain256":
+					case "Terrain":
+						plotlymap = "Earth"
+						break
+					case "Mocha":
+					case "VioletOrangeYellow":
+						plotlymap = "Electric"
 						break
 					default:
 						ColorTab2Wave $ctName // Makes a Nx43 matrix for RGB name M_colors
