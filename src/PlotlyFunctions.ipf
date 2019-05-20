@@ -2349,7 +2349,7 @@ static Function/T createAxisObj(axisName, PlyAxisName, graph, Orient, AxisNum)
 
 	variable IsCat = NumberByKey("ISCAT", info, ":", ";", 0)
 	if(IsCat)
-		obj += "\"type\": \"catgory\",\r" /// @todo check spelling
+		obj += "\"type\": \"category\",\r"
 		catGap = GetNumFromModifyStr(info, "catGap", "", 0) // Save these in the global list for use in the global section of KWARGS
 		barGap = GetNumFromModifyStr(info, "barGap", "", 0)
 		if(PlyLo > -0.5) // We need to adjust for plotly category plots, they go to -.5. But we allow for intentionally MORE negative ranges...
