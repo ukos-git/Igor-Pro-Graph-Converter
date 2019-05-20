@@ -869,8 +869,16 @@ static Function/T CreateColorTab(info, zwave, color_mode)
 				WaveStats/Q zwave
 				zMin = V_min
 				zMax = V_max
+				if(zMin == zMax) // one color: no offset
+					zMin = 0
+					zMax = 255
+				endif
 			endif
 			// eval={value, red, green, blue [, alpha]}
+				info = RemoveByKey("eval", info, "=")
+				if(value > zMax || value < zMin)
+					continue
+				endif
 			do
 				evalStr = StringByKey("eval", info, "=")
 				if(!cmpstr(evalStr, ""))
