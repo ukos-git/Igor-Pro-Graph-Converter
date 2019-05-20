@@ -863,17 +863,17 @@ static Function/T CreateColorTab(info, zwave, color_mode)
 				endif
 			endif
 			// eval={value, red, green, blue [, alpha]}
-				info = RemoveByKey("eval", info, "=")
-				if(value > zMax || value < zMin)
-					continue
-				endif
 			do
 				evalStr = StringByKey("eval", info, "=")
 				if(!cmpstr(evalStr, ""))
 					break
 				endif
+				info = RemoveByKey("eval", info, "=")
 				evalStr = evalStr[1, strlen(evalStr) - 2] // remove {}
 				value = str2num(StringFromList(0, evalStr, ","))
+				if(value > zMax || value < zMin)
+					continue
+				endif
 				rgbR  = str2num(StringFromList(1, evalStr, ","))
 				rgbG  = str2num(StringFromList(2, evalStr, ","))
 				rgbB  = str2num(StringFromList(3, evalStr, ","))
