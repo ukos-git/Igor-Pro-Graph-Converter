@@ -2715,7 +2715,8 @@ static Function/T CreateColorScaleObj(Name, graph, trace)
 	string Type = StringByKey("TYPE", info, ":", ";", 1)
 	string obj = ""
 	string Flags = StringByKey("FLAGS", info, ":", ";", 1)
-	string anchorCode, backCode, dflag, TxtColor, Rotation, exterior, Xpos, Ypos
+	string anchorCode, backCode, dflag, TxtColor, Rotation, exterior
+	variable Xpos, Ypos
 	variable BarWidth, frame
 	variable absX, absY, fracx, fracy
 	int rgbR, rgbG, rgbB, rgbA
@@ -2751,14 +2752,14 @@ static Function/T CreateColorScaleObj(Name, graph, trace)
 	frame = str2num(StringByKey("F", flags, "=", "/", 1))
 	txtColor = "txtcolor(x)="+StringByKey("G", flags, "=", "/", 1) // prepend a string used to search in the standard way
 
-	xPos = StringByKey("X", flags, "=", "/", 1)
-	yPos = StringByKey("Y", flags, "=", "/", 1)
-	absx = str2num(StringByKey("ABSX", info, ":", ";", 1))
-	absy = str2num(StringByKey("ABSY", info, ":", ";", 1))
+	xPos = NumberByKey("X", flags, "=", "/", 1)
+	yPos = NumberByKey("Y", flags, "=", "/", 1)
+	absx = NumberByKey("ABSX", info, ":", ";", 1)
+	absy = NumberByKey("ABSY", info, ":", ";", 1)
 	fracx = (absx - p_left) / (p_right - p_left)
 	fracx = max(-2, min(3, fracx))
-	fracy = (absy - p_bottom) / (p_top - p_bottom)
-	fracy = max(-2, min(3, fracx))
+	fracy = (absy - p_top) / (p_bottom - p_top)
+	fracy = max(-2, min(3, fracy))
 	obj += "\"x\":" + dub2str(fracx) + ",\r"
 	obj += "\"y\":" + dub2str(fracy) + ",\r"
 	obj += AnchorText(anchorcode)
