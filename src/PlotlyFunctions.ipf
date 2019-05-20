@@ -891,7 +891,6 @@ static Function/T CreateColorTab(info, zwave, color_mode)
 					ColorTabWave[V_Value][1] = rgbG
 					ColorTabWave[V_Value][2] = rgbB
 				endif
-				info = RemoveByKey("eval", info, "=")
 			while(1)
 			colorMappings -= zMin
 			colorMappings /= zMax
