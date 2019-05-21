@@ -2203,6 +2203,7 @@ static Function/T createAxisObj(axisName, PlyAxisName, graph, Orient, AxisNum)
 	string LblTxt = AxisLabelText(graph, axisName, SuppressEscaping=1)
 	string altFont
 	variable altFontSize, OZ
+	LblTxt = AxisLabelText(graph, axisName, SuppressEscaping = 1) // @todo AxisLabelText does not work with axis names left2 or bottom2
 	LblTxt = ProcessText(LblTxt, altFont, altFontsize, OZ)
 	obj += "\"title\":\"" + LblTxt + "\",\r"
 	obj += "\"titlefont\":{\r"
