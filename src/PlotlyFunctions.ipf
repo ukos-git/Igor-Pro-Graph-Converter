@@ -2260,9 +2260,8 @@ static Function/T createAxisObj(axisName, PlyAxisName, graph, Orient, AxisNum)
 	variable noLabel
 	string altFont, LblTxt
 	variable altFontSize, OZ
-
-	// get label text, font family and font size
-	LblTxt = AxisLabelText(graph, axisName, SuppressEscaping = 1)
+	// get label text, font family and fo
+	LblTxt = AxisLabelText(graph, axisName, SuppressEscaping = 1) // @todo AxisLabelText does not work with axis names left2 or bottom2
 	LblTxt = ProcessText(LblTxt, altFont, altFontsize, OZ)
 
 	// remove label text, keep font info
