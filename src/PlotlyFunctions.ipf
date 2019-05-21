@@ -1655,27 +1655,29 @@ static Function/T CreateTrObj(traceName, graph)
 
 	// Do things specific to category bar mode.
 	if(strsearch(plyMode, "bar", 0) > -1) // Bar mode
+		int barStrkR, barStrkG, barStrkB
+		variable barStrkA
+		string barStrkRGB = ""
 		variable UseBarStroke = GetNumFromModifyStr(info, "useBarStrokeRGB", "", 0)
 		if(UseBarStroke)
-			variable BarStrkR = round(GetNumFromModifyStr(info, "barStrokeRGB", "(", 0) / 257)
-			variable BarStrkG = round(GetNumFromModifyStr(info, "barStrokeRGB", "(", 1) / 257)
-			variable BarStrkB = round(GetNumFromModifyStr(info, "barStrokeRGB", "(", 2) / 257)
-			string BarStrkRGB = "\"rgb(" + dub2str(BarStrkR) + "," + dub2str(BarStrkG) + "," + dub2str(BarStrkB) + ")\""
+			GetRGBAfromInfo(info, "barStrokeRGB", barStrkR, barStrkG, barStrkB, barStrkA)
+			BarStrkRGB = "\"rgba(" + dub2str(barStrkR) + "," + dub2str(barStrkG) + "," + dub2str(barStrkB) + "," + dub2str(barStrkA) + ")\""
 		elseif(useZcolor)
 			BarStrkRGB = RGB_Array
 		else
-			BarStrkRGB = "\"rgb(" + dub2str(rgbR) + "," + dub2str(rgbG) + "," + dub2str(rgbB) + ")\""
+			BarStrkRGB = "\"rgba(" + dub2str(rgbR) + "," + dub2str(rgbG) + "," + dub2str(rgbB) + "," + dub2str(rgbA) + ")\""
 		endif
+		int barR, barG, barB
+		variable barA
+		string barRGB
 		variable UsePlusRGB = GetNumFromModifyStr(info, "usePlusRGB", "", 0)
-		if(UsePlusRGB) // These colors have the possiblity of transparency, based on hbFill, set above
-			variable BarR = round(GetNumFromModifyStr(info, "plusRGB", "(", 0) / 257)
-			variable BarG = round(GetNumFromModifyStr(info, "plusRGB", "(", 1) / 257)
-			variable BarB = round(GetNumFromModifyStr(info, "plusRGB", "(", 2) / 257)
-			string BarRGB = "\"rgba(" + dub2str(barR) + "," + dub2str(BarG) + "," + dub2str(BarB) + "," + dub2str(FillA) + ")\""
+		if(UsePlusRGB)
+			GetRGBAfromInfo(info, "barStrokeRGB", barR, barG, barB, barA)
+			barRGB = "\"rgba(" + dub2str(barR) + "," + dub2str(BarG) + "," + dub2str(BarB) + "," + dub2str(barA) + ")\""
 		elseif(useZcolor)
 			BarRGB = zColorArray(Colorinfo, plyMode, transp=FillA)
 		else
-			BarRGB = "\"rgba(" + dub2str(rgbR) + "," + dub2str(rgbG) + "," + dub2str(rgbB) + "," + dub2str(FillA) + ")\""
+			BarRGB = "\"rgba(" + dub2str(rgbR) + "," + dub2str(rgbG) + "," + dub2str(rgbB) + "," + dub2str(rgbA) + ")\""
 		endif
 		obj += "\"marker\":{\r"
 		obj += "\"color\":" + BarRGB + ",\r"
