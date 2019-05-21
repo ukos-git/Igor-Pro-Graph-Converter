@@ -799,6 +799,7 @@ static Constant COLOR_MODE_EXPLICIT = 5
 
 /// @brief create a plotly colorscale object
 ///
+/// @todo use plotly color table equivivalents Greys,YlGnBu,Greens,YlOrRd,Bluered,RdBu,Reds,Blues,Picnic,Rainbow,Portland,Jet,Hot,Blackbody,Earth,Electric,Viridis,Cividis.
 /// @todo handle logarithmic parameter
 /// @todo support alpha channel rgbA
 static Function/T CreateColorTab(info, zwave, color_mode)
