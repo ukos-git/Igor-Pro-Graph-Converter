@@ -2729,7 +2729,7 @@ static Function/T CreateColorScaleObj(Name, graph, trace)
 	absy = NumberByKey("ABSY", info, ":", ";", 1)
 	fracx = (absx - p_left) / (p_right - p_left)
 	fracx = max(-2, min(3, fracx))
-	fracy = (absy - p_top) / (p_bottom - p_top)
+	fracy = (absy - p_bottom) / (p_top - p_bottom)
 	fracy = max(-2, min(3, fracy))
 	obj += "\"x\":" + dub2str(fracx) + ",\r"
 	obj += "\"y\":" + dub2str(fracy) + ",\r"
